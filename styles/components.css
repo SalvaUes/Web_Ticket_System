@@ -1,0 +1,279 @@
+/* ===============================================================
+   Estilos de tarjetas, formularios, botones,
+   toasts y demas componentes reutilizables
+   =============================================================== */
+
+
+
+/* ----- Tarjetas de metrica ----- */
+.metric-card {
+  background: var(--surface);              /* Fondo blanco */
+  border-radius: var(--radius);            /* Esquinas redondeadas */
+  padding: 1.25rem;                        /* Espaciado interior */
+  box-shadow: var(--shadow);               /* Sombra suave */
+  display: flex;                           /* Layout flex */
+  flex-direction: column;                  /* Vertical */
+  gap: 0.25rem;                            /* Separacion entre etiqueta y valor */
+  border-left: 4px solid var(--primary);   /* Barra lateral con color */
+}
+.metric-label {                            /* Etiqueta superior */
+  font-size: 0.8rem;                       /* Pequena */
+  color: var(--text-muted);                /* Color suave */
+  text-transform: uppercase;               /* En mayusculas */
+  letter-spacing: 0.5px;                   /* Espaciado entre letras */
+}
+.metric-value { font-size: 2.25rem; font-weight: 700; } /* Valor grande */
+.metric-open { border-color: var(--accent); }           /* Color por estado: abierto */
+.metric-progress { border-color: var(--warn); }         /* Color: en progreso */
+.metric-closed { border-color: var(--success); }        /* Color: cerrado */
+
+
+
+
+/* ----- Panel generico del dashboard ----- */
+.panel {
+  background: var(--surface);              /* Fondo blanco */
+  border-radius: var(--radius);            /* Bordes redondeados */
+  padding: 1.25rem;                        /* Espaciado interior */
+  box-shadow: var(--shadow);               /* Sombra */
+}
+.panel h3 { font-size: 1rem; margin-bottom: 1rem; } /* Titulo del panel */
+.muted { color: var(--text-muted); font-size: 0.875rem; } /* Texto secundario */
+
+/* ----- Barras de prioridad ----- */
+.bars { display: flex; flex-direction: column; gap: 0.6rem; } /* Lista vertical */
+.bar-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; } /* Cada fila */
+.bar-label { width: 70px; text-transform: capitalize; } /* Etiqueta de prioridad */
+.bar-track {                                            /* Fondo de la barra */
+  flex: 1;                                              /* Ocupa el espacio restante */
+  height: 10px;                                         /* Altura fija */
+  background: var(--surface-alt);                       /* Color suave */
+  border-radius: 999px;                                 /* Pildora */
+  overflow: hidden;                                     /* Oculta el desbordamiento */
+}
+.bar-fill {                                             /* Relleno animado */
+  height: 100%;                                         /* Altura completa */
+  border-radius: 999px;                                 /* Pildora */
+  transition: width .5s ease;                           /* Animacion al cambiar */
+}
+.bar-baja { background: #94a3b8; }                      /* Color baja */
+.bar-media { background: var(--accent); }               /* Color media */
+.bar-alta { background: var(--warn); }                  /* Color alta */
+.bar-critica { background: var(--danger); }             /* Color critica */
+.bar-count { width: 30px; text-align: right; font-weight: 600; } /* Contador numerico */
+
+
+
+
+/* ----- Cajas de informacion del dashboard ----- */
+.geo-box, .worker-box {
+  font-size: 0.875rem;                     /* Tamano legible */
+  line-height: 1.6;                        /* Interlineado comodo */
+  margin-bottom: 0.75rem;                  /* Separacion inferior */
+}
+.geo-box strong { color: var(--primary); } /* Resalta datos clave */
+.actions-row { display: flex; flex-wrap: wrap; gap: 0.5rem; } /* Botones en fila envolvente */
+
+
+
+
+/* ----- Botones genericos ----- */
+.btn {
+  border: none;                            /* Sin borde por defecto */
+  padding: 0.6rem 1.1rem;                  /* Espaciado interno */
+  border-radius: 8px;                      /* Esquinas redondeadas */
+  font-size: 0.875rem;                     /* Tamano legible */
+  font-weight: 600;                        /* Peso seminegrita */
+  cursor: pointer;                         /* Cursor mano */
+  transition: all .2s;                     /* Transicion suave */
+  font-family: inherit;                    /* Hereda la fuente */
+}
+.btn:focus-visible {                       /* Foco visible accesible */
+  outline: 2px solid var(--primary);       /* Borde de foco */
+  outline-offset: 2px;                     /* Separacion */
+}
+.btn-primary {                             /* Boton primario */
+  background: linear-gradient(135deg, var(--primary), var(--primary-2)); /* Degradado */
+  color: white;                            /* Texto blanco */
+}
+.btn-primary:hover {                       /* Hover primario */
+  transform: translateY(-1px);             /* Eleva el boton */
+  box-shadow: 0 4px 12px rgba(99,102,241,0.4); /* Sombra coloreada */
+}
+.btn-secondary {                           /* Boton secundario */
+  background: var(--surface-alt);          /* Fondo suave */
+  color: var(--text);                      /* Texto principal */
+  border: 1px solid var(--border);         /* Borde */
+}
+.btn-secondary:hover { background: var(--border); } /* Hover secundario */
+.btn-ghost { background: transparent; color: var(--text-muted); } /* Boton fantasma */
+.btn-ghost:hover { color: var(--text); }   /* Hover fantasma */
+.btn-danger { background: var(--danger); color: white; } /* Boton de peligro */
+.btn-edit { background: var(--accent); color: white; }   /* Boton de edicion */
+
+
+
+
+/* ----- Barra de filtros del listado ----- */
+.toolbar {
+  display: flex;                           /* Flex horizontal */
+  flex-wrap: wrap;                         /* Permite envolver */
+  gap: 0.75rem;                            /* Separacion */
+  margin-bottom: 1rem;                     /* Espaciado inferior */
+  background: var(--surface);              /* Fondo blanco */
+  padding: 1rem;                           /* Padding interno */
+  border-radius: var(--radius);            /* Bordes redondeados */
+  box-shadow: var(--shadow);               /* Sombra */
+  align-items: center;                     /* Alinea verticalmente */
+}
+.toolbar input, .toolbar select {          /* Inputs del toolbar */
+  padding: 0.55rem 0.85rem;                /* Padding */
+  border: 1px solid var(--border);         /* Borde */
+  border-radius: 8px;                      /* Esquinas */
+  font-size: 0.875rem;                     /* Tamano */
+  background: white;                       /* Fondo */
+  font-family: inherit;                    /* Hereda fuente */
+}
+.toolbar input { flex: 1; min-width: 200px; } /* Busqueda flexible */
+.result-count { margin-left: auto; }       /* Contador a la derecha */
+
+
+
+
+/* ----- Lista de tickets ----- */
+.tickets-list { display: grid; gap: 0.75rem; } /* Grilla vertical */
+.ticket-card {
+  background: var(--surface);              /* Fondo blanco */
+  border-radius: var(--radius);            /* Bordes redondeados */
+  padding: 1rem 1.25rem;                   /* Padding */
+  box-shadow: var(--shadow);               /* Sombra */
+  display: flex;                           /* Flex */
+  flex-direction: column;                  /* Vertical */
+  gap: 0.5rem;                             /* Separacion */
+  border-left: 4px solid var(--border);    /* Barra lateral */
+  transition: transform .15s;              /* Animacion al hover */
+}
+.ticket-card:hover { transform: translateX(4px); } /* Hover desplaza */
+.ticket-card.prioridad-critica { border-color: var(--danger); } /* Color critica */
+.ticket-card.prioridad-alta { border-color: var(--warn); }      /* Color alta */
+.ticket-card.prioridad-media { border-color: var(--accent); }   /* Color media */
+.ticket-card.prioridad-baja { border-color: #94a3b8; }          /* Color baja */
+.ticket-head {                                                  /* Cabecera de cada ticket */
+  display: flex;                            /* Flex */
+  justify-content: space-between;           /* Separa titulo y acciones */
+  align-items: center;                      /* Centro vertical */
+  gap: 1rem;                                /* Espacio entre */
+  flex-wrap: wrap;                          /* Envuelve en movil */
+}
+.ticket-title { font-weight: 600; font-size: 1.05rem; }         /* Titulo del ticket */
+.ticket-desc { color: var(--text-muted); font-size: 0.875rem; } /* Descripcion */
+.ticket-meta {                                                  /* Metadatos en chips */
+  display: flex;                            /* Flex */
+  gap: 0.5rem;                              /* Separacion */
+  flex-wrap: wrap;                          /* Envuelve */
+  font-size: 0.75rem;                       /* Pequeno */
+}
+.chip {                                     /* Chip generico */
+  padding: 0.2rem 0.6rem;                   /* Padding */
+  border-radius: 999px;                     /* Pildora */
+  background: var(--surface-alt);           /* Fondo suave */
+  border: 1px solid var(--border);          /* Borde */
+  text-transform: capitalize;               /* Capitaliza */
+}
+.chip.estado-abierto { background: #cffafe; color: #155e75; border-color: #67e8f9; }       /* Chip abierto */
+.chip.estado-en_progreso { background: #fef3c7; color: #92400e; border-color: #fcd34d; }   /* Chip en progreso */
+.chip.estado-cerrado { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }       /* Chip cerrado */
+.ticket-actions { display: flex; gap: 0.5rem; } /* Botones de accion */
+.empty {                                        /* Estado vacio */
+  text-align: center;                          /* Centrado */
+  padding: 3rem;                                /* Espaciado */
+  color: var(--text-muted);                     /* Color suave */
+  background: var(--surface);                   /* Fondo */
+  border-radius: var(--radius);                 /* Esquinas */
+  box-shadow: var(--shadow);                    /* Sombra */
+}
+
+
+
+
+/* ----- Formulario de creacion/edicion ----- */
+.form-card {
+  background: var(--surface);                /* Fondo */
+  padding: 2rem;                             /* Padding */
+  border-radius: var(--radius);              /* Bordes */
+  box-shadow: var(--shadow);                 /* Sombra */
+  max-width: 700px;                          /* Ancho maximo */
+  margin: 0 auto;                            /* Centrado */
+}
+.form-card h2 { margin-bottom: 1.5rem; }    /* Espacio bajo el titulo */
+.form-card label {                          /* Cada label en bloque */
+  display: block;                            /* Bloque */
+  margin-bottom: 1rem;                       /* Separacion */
+  font-size: 0.875rem;                       /* Tamano */
+  font-weight: 500;                          /* Peso */
+}
+.form-card input, .form-card textarea, .form-card select {
+  width: 100%;                               /* Ancho completo */
+  padding: 0.65rem 0.85rem;                  /* Padding */
+  margin-top: 0.35rem;                       /* Separa de la etiqueta */
+  border: 1px solid var(--border);           /* Borde */
+  border-radius: 8px;                        /* Esquinas */
+  font-size: 0.95rem;                        /* Tamano legible */
+  font-family: inherit;                      /* Misma fuente */
+  background: white;                         /* Fondo blanco */
+}
+.form-card input:focus, .form-card textarea:focus, .form-card select:focus {
+  outline: none;                             /* Quita outline */
+  border-color: var(--primary);              /* Borde primario */
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15); /* Halo de foco */
+}
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; } /* Fila a dos columnas */
+.error {                                     /* Mensaje de error */
+  color: var(--danger);                      /* Rojo */
+  font-size: 0.75rem;                        /* Pequeno */
+  display: block;                            /* Bloque */
+  margin-top: 0.25rem;                       /* Separacion */
+  min-height: 1em;                           /* Altura minima para evitar saltos */
+}
+.form-actions { display: flex; gap: 0.5rem; margin-top: 1rem; } /* Botones del formulario */
+
+
+
+
+
+/* ----- Notificaciones tipo toast ----- */
+.toast-container {
+  position: fixed;                           /* Posicion fija */
+  bottom: 1.5rem;                            /* Desde abajo */
+  right: 1.5rem;                             /* Desde la derecha */
+  display: flex;                             /* Flex */
+  flex-direction: column;                    /* Vertical */
+  gap: 0.5rem;                               /* Separacion */
+  z-index: 1000;                             /* Por encima de todo */
+}
+.toast {
+  background: var(--bg);                     /* Fondo oscuro */
+  color: white;                              /* Texto blanco */
+  padding: 0.85rem 1.25rem;                  /* Padding */
+  border-radius: 10px;                       /* Esquinas */
+  box-shadow: var(--shadow);                 /* Sombra */
+  animation: slideIn .25s ease;              /* Animacion de entrada */
+  min-width: 240px;                          /* Ancho minimo */
+  border-left: 4px solid var(--primary);     /* Acento lateral */
+}
+.toast.success { border-color: var(--success); } /* Exito */
+.toast.error { border-color: var(--danger); }    /* Error */
+.toast.warn { border-color: var(--warn); }       /* Aviso */
+@keyframes slideIn {                              /* Animacion */
+  from { transform: translateX(100%); opacity: 0; } /* Inicial */
+  to { transform: none; opacity: 1; }               /* Final */
+}
+
+
+
+
+/* Responsive: una columna en movil */
+@media (max-width: 640px) {
+  .row { grid-template-columns: 1fr; }       /* Stack en movil */
+  .result-count { margin-left: 0; }           /* Sin auto en movil */
+}

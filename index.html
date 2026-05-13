@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" /><!-- Viewport responsive -->
+
+  <meta name="description" content="Gestion de tickets de soporte 100% frontend con LocalStorage, Web Workers y API publica" /><!-- Aqui pongo la descripcion para SEO -->
+  <title>SoporteHub - Gestion de Tickets de Soporte</title><!-- Titulo de la pestana -->
+  <link rel="stylesheet" href="./styles/main.css" /><!-- Hoja de estilos global: variables, layout y reset -->
+  <link rel="stylesheet" href="./styles/components.css" /><!-- Hoja de estilos de componentes: tarjetas, botones, formularios -->
+</head>
+
+
+
+
+<body>
+  <header class="topbar"><!-- Barra superior fija con marca y navegacion -->
+
+    <div class="brand"><!-- Bloque de marca (logo + nombre) -->
+      <span class="logo" aria-hidden="true">🎫</span><!-- Icono decorativo de la marca -->
+      <div>
+        <h1>SoporteHub</h1><!-- Titulo principal de la pagina -->
+        <p class="subtitle">Gestion inteligente de tickets</p><!-- Subtitulo descriptivo -->
+      </div>
+    </div>
+
+
+    <nav class="tabs" id="tabs" aria-label="Navegacion principal"><!-- Navegacion por pestanas -->
+      <button class="tab active" data-tab="dashboard" type="button">Dashboard</button><!-- Pestana del panel de metricas -->
+      <button class="tab" data-tab="tickets" type="button">Tickets</button><!-- Pestana del listado -->
+      <button class="tab" data-tab="nuevo" type="button">Nuevo Ticket</button><!-- Pestana del formulario -->
+    </nav>
+  </header>
+
+
+
+  <main class="container"><!-- Contenedor principal centrado -->
+
+
+
+
+    <!-- ============================ VISTA DASHBOARD ============================ -->
+    <section id="view-dashboard" class="view active" aria-labelledby="dash-title"><!-- Vista del dashboard -->
+      <h2 id="dash-title" class="sr-only">Dashboard</h2><!-- Titulo accesible oculto -->
+
+      <div class="metrics-grid"><!-- Grilla de tarjetas de metricas -->
+        <div class="metric-card metric-total"><!-- Tarjeta total -->
+          <span class="metric-label">Total</span><!-- Etiqueta de la metrica -->
+          <span class="metric-value" id="m-total">0</span><!-- Valor numerico dinamico -->
+        </div>
+
+        <div class="metric-card metric-open"><!-- Tarjeta abiertos -->
+          <span class="metric-label">Abiertos</span><!-- Etiqueta -->
+          <span class="metric-value" id="m-abierto">0</span><!-- Valor dinamico -->
+        </div>
+
+        <div class="metric-card metric-progress"><!-- Tarjeta en progreso -->
+          <span class="metric-label">En Progreso</span><!-- Etiqueta -->
+          <span class="metric-value" id="m-progreso">0</span><!-- Valor dinamico -->
+        </div>
+
+        <div class="metric-card metric-closed"><!-- Tarjeta cerrados -->
+          <span class="metric-label">Cerrados</span><!-- Etiqueta -->
+          <span class="metric-value" id="m-cerrado">0</span><!-- Valor dinamico -->
+        </div>
+      </div>
+
+
+      <div class="dashboard-grid"><!-- Grilla de paneles del dashboard -->
+
+        <div class="panel"><!-- Panel de distribucion por prioridad -->
+          <h3>Distribucion por Prioridad</h3><!-- Titulo del panel -->
+          <div id="priority-bars" class="bars" aria-live="polite"></div><!-- Contenedor de barras dinamicas -->
+        </div>
+
+        <div class="panel"><!-- Panel de geolocalizacion y clima -->
+          <h3>Geolocalizacion y Clima</h3><!-- Titulo del panel -->
+          <div id="geo-info" class="geo-box" aria-live="polite"><!-- Contenedor de datos geo -->
+            <p class="muted">Solicitando ubicacion...</p><!-- Estado inicial -->
+          </div>
+          <button id="btn-geo" class="btn btn-secondary" type="button">Actualizar ubicacion</button><!-- Boton refrescar geo -->
+        </div>
+
+
+        <div class="panel"><!-- Panel de estadisticas del Web Worker -->
+          <h3>Procesado por Web Worker</h3><!-- Titulo del panel -->
+          <div id="worker-stats" class="worker-box" aria-live="polite"><!-- Contenedor de stats -->
+            <p class="muted">Esperando datos...</p><!-- Estado inicial -->
+          </div>
+        </div>
+
+        <div class="panel"><!-- Panel de acciones rapidas -->
+          <h3>Acciones rapidas</h3><!-- Titulo del panel -->
+          <div class="actions-row"><!-- Fila de botones -->
+            <button id="btn-export" class="btn btn-primary" type="button">Exportar CSV</button><!-- Exportar CSV -->
+            <button id="btn-import" class="btn btn-secondary" type="button">Importar JSON</button><!-- Importar JSON -->
+            <input id="file-import" type="file" accept="application/json" hidden /><!-- Input oculto para JSON -->
+            <button id="btn-notify" class="btn btn-secondary" type="button">Notificacion de prueba</button><!-- Notificacion -->
+            <button id="btn-seed" class="btn btn-ghost" type="button">Cargar datos demo</button><!-- Datos demo -->
+            <button id="btn-clear" class="btn btn-danger" type="button">Borrar todo</button><!-- Limpiar storage -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+
+
+    <!-- ============================ VISTA TICKETS ============================ -->
+    <section id="view-tickets" class="view" aria-labelledby="tickets-title"><!-- Vista del listado -->
+      <h2 id="tickets-title" class="sr-only">Listado de Tickets</h2><!-- Titulo accesible -->
+      <div class="toolbar"><!-- Barra de herramientas con filtros -->
+        <input id="search" type="search" placeholder="Buscar por titulo o descripcion..." aria-label="Buscar" /><!-- Busqueda libre -->
+        <select id="filter-estado" aria-label="Filtrar por estado"><!-- Filtro por estado -->
+          <option value="">Todos los estados</option><!-- Opcion sin filtro -->
+          <option value="abierto">Abierto</option><!-- Opcion abierto -->
+          <option value="en_progreso">En Progreso</option><!-- Opcion en progreso -->
+          <option value="cerrado">Cerrado</option><!-- Opcion cerrado -->
+        </select>
+        <select id="filter-prioridad" aria-label="Filtrar por prioridad"><!-- Filtro por prioridad -->
+          <option value="">Todas las prioridades</option><!-- Sin filtro -->
+          <option value="baja">Baja</option><!-- Prioridad baja -->
+          <option value="media">Media</option><!-- Prioridad media -->
+          <option value="alta">Alta</option><!-- Prioridad alta -->
+          <option value="critica">Critica</option><!-- Prioridad critica -->
+        </select>
+        <span id="result-count" class="muted result-count">0 resultados</span><!-- Contador de resultados -->
+      </div>
+      <div id="tickets-list" class="tickets-list" aria-live="polite"></div><!-- Contenedor del listado -->
+    </section>
+
+
+
+
+
+    <!-- ============================ VISTA NUEVO/EDITAR ============================ -->
+    <section id="view-nuevo" class="view" aria-labelledby="form-title"><!-- Vista del formulario -->
+      <form id="ticket-form" class="form-card" novalidate><!-- Formulario sin validacion HTML por defecto -->
+        <h2 id="form-title">Crear Ticket</h2><!-- Titulo del formulario -->
+        <input type="hidden" id="ticket-id" /><!-- Id oculto para edicion -->
+
+        <label><!-- Campo titulo -->
+          Titulo *<!-- Etiqueta -->
+          <input type="text" id="titulo" maxlength="80" required autocomplete="off" /><!-- Input titulo -->
+          <small class="error" data-error="titulo"></small><!-- Espacio para mensaje de error -->
+        </label>
+
+        <label><!-- Campo descripcion -->
+          Descripcion *<!-- Etiqueta -->
+          <textarea id="descripcion" rows="4" maxlength="500" required></textarea><!-- Area de texto -->
+          <small class="error" data-error="descripcion"></small><!-- Mensaje de error -->
+        </label>
+
+        <div class="row"><!-- Fila de dos columnas -->
+          <label><!-- Campo estado -->
+            Estado<!-- Etiqueta -->
+            <select id="estado"><!-- Select estado -->
+              <option value="abierto">Abierto</option><!-- Opcion -->
+              <option value="en_progreso">En Progreso</option><!-- Opcion -->
+              <option value="cerrado">Cerrado</option><!-- Opcion -->
+            </select>
+          </label>
+
+          <label><!-- Campo prioridad -->
+            Prioridad<!-- Etiqueta -->
+            <select id="prioridad"><!-- Select prioridad -->
+              <option value="baja">Baja</option><!-- Opcion -->
+              <option value="media" selected>Media</option><!-- Opcion por defecto -->
+              <option value="alta">Alta</option><!-- Opcion -->
+              <option value="critica">Critica</option><!-- Opcion -->
+            </select>
+          </label>
+        </div>
+
+
+
+        <div class="form-actions"><!-- Botones del formulario -->
+          <button type="submit" class="btn btn-primary" id="btn-save">Guardar</button><!-- Enviar -->
+          <button type="button" class="btn btn-ghost" id="btn-cancel">Cancelar</button><!-- Cancelar -->
+        </div>
+      </form>
+    </section>
+
+  </main>
+
+  <div id="toast-container" class="toast-container" aria-live="assertive"></div><!-- Contenedor de notificaciones toast -->
+
+  <footer class="footer"><!-- Pie de pagina -->
+    <p class="muted">SoporteHub - Proyecto frontend puro - HTML5, CSS3, JavaScript ES6+</p><!-- Texto del footer -->
+  </footer>
+
+  <script type="module" src="./js/app.js"></script><!-- Punto de entrada de la aplicacion como modulo ES6 -->
+</body>
+</html>

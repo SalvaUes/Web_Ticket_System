@@ -1,0 +1,170 @@
+/* ===============================================================
+   main.css - Variables, reset y layout global de la aplicacion
+   =============================================================== */
+
+
+
+
+/* Definicion de variables CSS reutilizables (tema claro) */
+:root {
+  --bg: #0f172a;                  /* Color de fondo oscuro principal */
+  --bg-2: #1e293b;                /* Color de fondo oscuro secundario */
+  --surface: #ffffff;             /* Superficie de tarjetas */
+  --surface-alt: #f8fafc;         /* Superficie alternativa suave */
+  --border: #e2e8f0;              /* Color de bordes */
+  --text: #0f172a;                /* Color de texto principal */
+  --text-muted: #64748b;          /* Color de texto secundario */
+  --primary: #6366f1;             /* Color primario (indigo) */
+  --primary-2: #8b5cf6;           /* Color primario degradado (violeta) */
+  --accent: #06b6d4;              /* Color de acento (cyan) */
+  --success: #10b981;             /* Color de exito (verde) */
+  --warn: #f59e0b;                /* Color de advertencia (ambar) */
+  --danger: #ef4444;              /* Color de peligro (rojo) */
+  --shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.15); /* Sombra reutilizable */
+  --radius: 14px;                 /* Radio de borde estandar */
+  --gap: 1rem;                    /* Espaciado base */
+}
+
+
+
+/* Reset minimo: cero margenes, padding y modelo de caja consistente */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Texto accesible solo para lectores de pantalla */
+.sr-only {
+  position: absolute;             /* Saca el elemento del flujo visible */
+  width: 1px; height: 1px;        /* Tamano minimo */
+  padding: 0; margin: -1px;       /* Sin padding y margen negativo */
+  overflow: hidden;               /* Oculta el desborde */
+  clip: rect(0,0,0,0);            /* Recorta el contenido */
+  white-space: nowrap;            /* Evita salto de linea */
+  border: 0;                      /* Sin borde */
+}
+
+
+
+/* Estilos base del cuerpo */
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; /* Fuente del sistema */
+  background: linear-gradient(135deg, #f1f5f9 0%, #e0e7ff 100%); /* Fondo degradado */
+  min-height: 100vh;              /* Ocupa al menos toda la altura visible */
+  color: var(--text);             /* Color de texto desde la variable */
+  display: flex;                  /* Flex vertical para sticky footer */
+  flex-direction: column;         /* Direccion columna */
+}
+
+
+
+/* Barra superior con marca y pestanas */
+.topbar {
+  background: linear-gradient(135deg, var(--bg) 0%, var(--bg-2) 100%); /* Fondo oscuro degradado */
+  color: white;                   /* Texto blanco */
+  padding: 1rem 2rem;             /* Espaciado interno */
+  display: flex;                  /* Layout flex */
+  flex-wrap: wrap;                /* Permite envolver en pantallas pequenas */
+  justify-content: space-between; /* Marca a la izquierda, tabs a la derecha */
+  align-items: center;            /* Centra verticalmente */
+  gap: 1rem;                      /* Separacion entre items */
+  box-shadow: var(--shadow);      /* Sombra inferior */
+}
+
+.brand { display: flex; align-items: center; gap: 0.75rem; } /* Marca: icono + texto */
+.logo { font-size: 2rem; }         /* Tamano del icono */
+.brand h1 { font-size: 1.25rem; letter-spacing: 0.5px; } /* Titulo de la marca */
+.subtitle { font-size: 0.75rem; opacity: 0.7; } /* Subtitulo discreto */
+
+
+
+
+/* Contenedor de pestanas */
+.tabs {
+  display: flex;                   /* Layout flex horizontal */
+  gap: 0.25rem;                    /* Separacion entre tabs */
+  background: rgba(255,255,255,0.08); /* Fondo translucido */
+  padding: 0.25rem;                /* Padding interior */
+  border-radius: 999px;            /* Pildora redondeada */
+}
+
+
+
+
+/* Estilo base de cada pestana */
+.tab {
+  background: transparent;         /* Sin fondo por defecto */
+  border: none;                    /* Sin borde */
+  color: rgba(255,255,255,0.7);    /* Color de texto suave */
+  padding: 0.5rem 1.1rem;          /* Espaciado interno */
+  border-radius: 999px;            /* Pildora */
+  cursor: pointer;                 /* Cursor de mano */
+  font-size: 0.875rem;             /* Tamano de fuente */
+  font-weight: 500;                /* Peso medio */
+  transition: all .2s;             /* Transicion suave */
+}
+.tab:hover { color: white; }       /* Hover: texto blanco */
+.tab.active {                      /* Pestana activa */
+  background: linear-gradient(135deg, var(--primary), var(--primary-2)); /* Fondo degradado */
+  color: white;                    /* Texto blanco */
+}
+
+
+
+
+/* Contenedor principal centrado */
+.container {
+  max-width: 1200px;               /* Ancho maximo */
+  width: 100%;                     /* Ocupa todo lo disponible */
+  margin: 0 auto;                  /* Centrado horizontal */
+  padding: 2rem 1.5rem;            /* Espaciado interno */
+  flex: 1;                         /* Crece para empujar el footer */
+}
+
+
+
+
+/* Vistas: solo se muestra una a la vez */
+.view { display: none; animation: fadeIn .3s ease; } /* Oculta por defecto */
+.view.active { display: block; }                      /* Muestra la activa */
+@keyframes fadeIn {                                   /* Animacion de entrada */
+  from { opacity: 0; transform: translateY(8px); }    /* Estado inicial */
+  to { opacity: 1; transform: none; }                 /* Estado final */
+}
+
+
+
+
+/* Grilla de metricas con auto-fit responsive */
+.metrics-grid {
+  display: grid;                                      /* Layout grid */
+  gap: var(--gap);                                    /* Separacion */
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Columnas responsive */
+  margin-bottom: 1.5rem;                              /* Separacion inferior */
+}
+
+
+
+/* Grilla de paneles del dashboard */
+.dashboard-grid {
+  display: grid;                                      /* Grid */
+  gap: var(--gap);                                    /* Separacion */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive */
+}
+
+
+
+/* Pie de pagina */
+.footer {
+  text-align: center;              /* Centrado */
+  padding: 1.5rem 1rem;            /* Espaciado */
+  color: var(--text-muted);        /* Color suave */
+  font-size: 0.85rem;              /* Tamano pequeno */
+}
+
+
+
+
+/* Responsive: ajustes para pantallas pequenas */
+@media (max-width: 640px) {
+  .topbar { padding: 1rem; }       /* Menos padding en movil */
+  .container { padding: 1rem; }    /* Menos padding interior */
+  .tabs { width: 100%; justify-content: center; } /* Tabs centradas y full width */
+}
