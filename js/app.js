@@ -57,6 +57,14 @@ function renderDashboard() {
   mCerrado.textContent = tickets.filter(t => t.estado === "cerrado").length;
 }
 
+function escapeHTML(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 function renderTickets() {
   const filtered = filterTickets(tickets, filters);
 
@@ -72,9 +80,9 @@ function renderTickets() {
 
     card.innerHTML = `
       <div>
-        <h3>${ticket.titulo}</h3>
-        <p>${ticket.descripcion}</p>
-        <small>Estado: ${ticket.estado} | Prioridad: ${ticket.prioridad}</small>
+        <h3>${escapeHTML(ticket.titulo)}</h3>
+        <p>${escapeHTML(ticket.descripcion)}</p>
+        <small>Estado: ${escapeHTML(ticket.estado)} | Prioridad: ${escapeHTML(ticket.prioridad)}</small>
       </div>
 
       <div class="actions-row">
@@ -177,12 +185,25 @@ ticketsList.addEventListener("click", event => {
   }
 });
 
-search.addEventListener("input", () => {
+function debounce(callback, delay = 300) {
+  let timeoutId;
+
+  return (...args) => {
+    clearTimeout(timeoutId);
+
+    timeoutId = setTimeout(() => {
+      callback(...args);
+    }, delay);
+  };
+}
+
+const handleSearchInput = debounce(() => {
   filters.search = search.value;
   saveFilters(filters);
   renderTickets();
-});
+}, 300);
 
+search.addEventListener("input", handleSearchInput);
 filterEstado.addEventListener("change", () => {
   filters.estado = filterEstado.value;
   saveFilters(filters);

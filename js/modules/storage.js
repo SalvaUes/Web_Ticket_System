@@ -17,6 +17,12 @@ export function saveTickets(tickets) {
   try {
     localStorage.setItem(TICKETS_KEY, JSON.stringify(tickets));
   } catch (error) {
+    if (error.name === "QuotaExceededError") {
+      console.warn("LocalStorage lleno: no se pudieron guardar los tickets.", error);
+      alert("No hay espacio suficiente para guardar más tickets. Elimine tickets antiguos e intente nuevamente.");
+      return;
+    }
+
     console.error("Error al guardar tickets:", error);
   }
 }
