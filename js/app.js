@@ -13,6 +13,8 @@ import {
   filterTickets
 } from "./modules/crud.js";
 
+import { actualizarDashboard, cargarGeo } from "./modules/dashboard.js";
+
 let tickets = getTickets();
 let filters = getFilters();
 
@@ -96,6 +98,7 @@ function renderTickets() {
 
   resultCount.textContent = `${filtered.length} resultados`;
   renderDashboard();
+  actualizarDashboard(tickets);  // Envia tickets al Web Worker
 }
 
 function clearErrors() {
@@ -243,3 +246,6 @@ filterPrioridad.value = filters.prioridad;
 
 renderTickets();
 renderDashboard();
+
+// Carga inicial de geolocalizacion y clima
+cargarGeo();
