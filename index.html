@@ -108,7 +108,7 @@
     <!-- ============================ VISTA TICKETS ============================ -->
     <section id="view-tickets" class="view" aria-labelledby="tickets-title"><!-- Vista del listado -->
       <h2 id="tickets-title" class="sr-only">Listado de Tickets</h2><!-- Titulo accesible -->
-      <div class="toolbar"><!-- Barra de herramientas con filtros -->
+      <div class="toolbar" id="tickets-toolbar"><!-- Barra de herramientas con filtros -->
         <input id="search" type="search" placeholder="Buscar por titulo o descripcion..." aria-label="Buscar" /><!-- Busqueda libre -->
         <select id="filter-estado" aria-label="Filtrar por estado"><!-- Filtro por estado -->
           <option value="">Todos los estados</option><!-- Opcion sin filtro -->
@@ -125,6 +125,7 @@
         </select>
         <span id="result-count" class="muted result-count">0 resultados</span><!-- Contador de resultados -->
       </div>
+      <div id="edit-panel" class="edit-panel is-hidden"></div><!-- Panel de edicion en la misma vista -->
       <div id="tickets-list" class="tickets-list" aria-live="polite"></div><!-- Contenedor del listado -->
     </section>
 
@@ -151,7 +152,7 @@
         </label>
 
         <div class="row"><!-- Fila de dos columnas -->
-          <label><!-- Campo estado -->
+          <label id="estado-field" class="is-hidden"><!-- Campo estado -->
             Estado<!-- Etiqueta -->
             <select id="estado"><!-- Select estado -->
               <option value="abierto">Abierto</option><!-- Opcion -->

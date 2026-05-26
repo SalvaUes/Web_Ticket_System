@@ -261,9 +261,31 @@
   min-width: 240px;                          /* Ancho minimo */
   border-left: 4px solid var(--primary);     /* Acento lateral */
 }
+  .toast-warn { background: var(--warn); color: white; }
+  .toast-success { background: var(--success); color: white; }
+  .toast-error { background: var(--danger); color: white; }
 .toast.success { border-color: var(--success); } /* Exito */
 .toast.error { border-color: var(--danger); }    /* Error */
 .toast.warn { border-color: var(--warn); }       /* Aviso */
+
+.is-hidden { display: none !important; }
+
+.view.editing-ticket .toolbar,
+.view.editing-ticket .tickets-list {
+  display: none !important;
+}
+
+.view.editing-ticket .edit-panel {
+  display: block;
+}
+
+.edit-panel {
+  margin-bottom: 1rem;
+}
+
+.edit-panel .form-card {
+  margin: 0;
+}
 @keyframes slideIn {                              /* Animacion */
   from { transform: translateX(100%); opacity: 0; } /* Inicial */
   to { transform: none; opacity: 1; }               /* Final */
