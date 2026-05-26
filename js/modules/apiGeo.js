@@ -6,11 +6,10 @@
 // ============================================================
 
 
-// --- 1. Obtener coordenadas del navegador -------------------
+//Obtener coordenadas del navegador 
 
 /**
  * Solicita la ubicacion actual al navegador.
- * Devuelve una promesa con { lat, lon } o lanza un Error descriptivo.
  */
 export function obtenerCoordenadas() {
   return new Promise((resolve, reject) => {
@@ -41,7 +40,7 @@ export function obtenerCoordenadas() {
 }
 
 
-// --- 2. Reverse-geocoding con BigDataCloud ------------------
+//Reverse-geocoding con BigDataCloud
 
 /**
  * Convierte coordenadas a nombre de ciudad y pais.
@@ -70,11 +69,9 @@ async function obtenerNombreUbicacion(lat, lon) {
 }
 
 
-// --- 3. Clima actual con Open-Meteo ------------------------
+//Clima actual con Open-Meteo 
 
 /**
- * Obtiene el clima actual para las coordenadas dadas.
- * Devuelve temperatura, humedad, descripcion del codigo WMO y emoji.
  * @param {number} lat
  * @param {number} lon
  * @returns {Promise<{ temperatura: number, humedad: number, descripcion: string, emoji: string }>}
@@ -106,8 +103,6 @@ async function obtenerClima(lat, lon) {
 }
 
 /**
- * Convierte el codigo meteorologico WMO en texto y emoji legibles.
- * Referencia: https://open-meteo.com/en/docs
  * @param {number} codigo
  * @returns {{ descripcion: string, emoji: string }}
  */
@@ -138,9 +133,6 @@ function interpretarCodigoWMO(codigo) {
 
   return tabla[codigo] ?? { descripcion: "Condicion desconocida", emoji: "🌡️" };
 }
-
-
-// --- 4. Funcion principal exportada -------------------------
 
 /**
  * Obtiene coordenadas reales del navegador, las procesa con dos
