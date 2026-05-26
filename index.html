@@ -92,9 +92,7 @@
         <div class="panel"><!-- Panel de acciones rapidas -->
           <h3>Acciones rapidas</h3><!-- Titulo del panel -->
           <div class="actions-row"><!-- Fila de botones -->
-            <button id="btn-export" class="btn btn-primary" type="button">Exportar CSV</button><!-- Exportar CSV -->
-            <button id="btn-import" class="btn btn-secondary" type="button">Importar JSON</button><!-- Importar JSON -->
-            <input id="file-import" type="file" accept="application/json" hidden /><!-- Input oculto para JSON -->
+            <button id="btn-export" class="btn btn-primary" type="button">Exportar PDF</button><!-- Exportar PDF -->
             <button id="btn-notify" class="btn btn-secondary" type="button">Notificacion de prueba</button><!-- Notificacion -->
             <button id="btn-seed" class="btn btn-ghost" type="button">Cargar datos demo</button><!-- Datos demo -->
             <button id="btn-clear" class="btn btn-danger" type="button">Borrar todo</button><!-- Limpiar storage -->
@@ -190,6 +188,9 @@
     <p class="muted">SoporteHub - Proyecto frontend puro - HTML5, CSS3, JavaScript ES6+</p><!-- Texto del footer -->
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script><!-- libreria para generar PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script><!-- libreria para generar PDF -->
+  <script type="module" src="./js/modules/pdf.js"></script><!-- Registro del boton Exportar PDF -->
   <script type="module" src="./js/app.js"></script><!-- Punto de entrada de la aplicacion como modulo ES6 -->
 </body>
 </html>
