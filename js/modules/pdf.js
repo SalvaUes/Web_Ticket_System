@@ -44,7 +44,7 @@ export function exportPdfReport(tickets) { // tickets: array de objetos ticket
   doc.save(`SoporteHub_Tickets_${new Date().toISOString().slice(0, 10)}.pdf`); // descargar PDF
 }
 
-// REGISTRO DEL BOTON: conectar el boton sin tocar app.js
+// REGISTRO DEL BOTON
 const btnExport = document.getElementById("btn-export"); // obtener referencia del boton
 if (btnExport && !btnExport.dataset.pdfBound) { // evitar doble registro
   btnExport.dataset.pdfBound = "true"; // marcar como registrado
