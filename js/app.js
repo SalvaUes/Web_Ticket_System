@@ -13,6 +13,8 @@ import {
   filterTickets
 } from "./modules/crud.js";
 
+import { actualizarDashboard, cargarGeo } from "./modules/dashboard.js";
+
 let tickets = getTickets();
 let filters = getFilters();
 
@@ -28,6 +30,11 @@ const prioridad = document.getElementById("prioridad");
 
 const ticketsList = document.getElementById("tickets-list");
 const resultCount = document.getElementById("result-count");
+const ticketsToolbar = document.getElementById("tickets-toolbar");
+const ticketsView = document.getElementById("view-tickets");
+const viewNuevo = document.getElementById("view-nuevo");
+const editPanel = document.getElementById("edit-panel");
+const estadoField = document.getElementById("estado-field");
 
 const search = document.getElementById("search");
 const filterEstado = document.getElementById("filter-estado");
@@ -41,6 +48,10 @@ const mCerrado = document.getElementById("m-cerrado");
 const btnCancel = document.getElementById("btn-cancel");
 const btnClear = document.getElementById("btn-clear");
 const formTitle = document.getElementById("form-title");
+const toastContainer = document.getElementById("toast-container");
+
+let isEditing = false;
+let isDirty = false;
 
 function showView(viewName) {
   views.forEach(view => view.classList.remove("active"));
@@ -48,6 +59,60 @@ function showView(viewName) {
 
   document.getElementById(`view-${viewName}`).classList.add("active");
   document.querySelector(`[data-tab="${viewName}"]`).classList.add("active");
+}
+
+function setFormMode(mode) {
+  const editing = mode === "edit";
+  isEditing = editing;
+  isDirty = false;
+  formTitle.textContent = editing ? "Editar Ticket" : "Crear Ticket";
+  if (estadoField) {
+    estadoField.classList.toggle("is-hidden", !editing);
+  }
+}
+
+function showToast(message, variant = "warn") {
+  if (!toastContainer) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${variant}`;
+  toast.textContent = message;
+
+  toastContainer.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
+
+function moveFormToEditPanel() {
+  if (editPanel && form.parentElement !== editPanel) {
+    editPanel.appendChild(form);
+  }
+  if (editPanel) editPanel.classList.remove("is-hidden");
+  if (ticketsView) ticketsView.classList.add("editing-ticket");
+}
+
+function moveFormToNuevoView() {
+  if (viewNuevo && form.parentElement !== viewNuevo) {
+    viewNuevo.appendChild(form);
+  }
+  if (editPanel) editPanel.classList.add("is-hidden");
+  if (ticketsView) ticketsView.classList.remove("editing-ticket");
+}
+
+function exitEditMode() {
+  resetForm();
+  setFormMode("create");
+  moveFormToNuevoView();
+}
+
+function canNavigateAway() {
+  if (isEditing) {
+    showToast("Debes guardar o cancelar el ticket que estas editando antes de cambiar de pestana.");
+    return false;
+  }
+  return true;
 }
 
 function renderDashboard() {
@@ -96,6 +161,7 @@ function renderTickets() {
 
   resultCount.textContent = `${filtered.length} resultados`;
   renderDashboard();
+  actualizarDashboard(tickets);  // Envia tickets al Web Worker
 }
 
 function clearErrors() {
@@ -116,7 +182,6 @@ function showErrors(errors) {
 function resetForm() {
   form.reset();
   ticketId.value = "";
-  formTitle.textContent = "Crear Ticket";
   clearErrors();
 }
 
@@ -126,10 +191,12 @@ form.addEventListener("submit", event => {
   try {
     clearErrors();
 
+    const wasEditing = isEditing;
+
     const data = {
       titulo: titulo.value,
       descripcion: descripcion.value,
-      estado: estado.value,
+      estado: wasEditing ? estado.value : "abierto",
       prioridad: prioridad.value
     };
 
@@ -141,8 +208,12 @@ form.addEventListener("submit", event => {
     }
 
     saveTickets(tickets);
-    resetForm();
     renderTickets();
+    if (wasEditing) {
+      exitEditMode();
+    } else {
+      resetForm();
+    }
     showView("tickets");
 
   } catch (error) {
@@ -160,14 +231,16 @@ ticketsList.addEventListener("click", event => {
 
       if (!ticket) return;
 
+      setFormMode("edit");
+      moveFormToEditPanel();
+
       ticketId.value = ticket.id;
       titulo.value = ticket.titulo;
       descripcion.value = ticket.descripcion;
       estado.value = ticket.estado;
       prioridad.value = ticket.prioridad;
 
-      formTitle.textContent = "Editar Ticket";
-      showView("nuevo");
+      showView("tickets");
     }
 
     if (deleteId) {
@@ -218,12 +291,25 @@ filterPrioridad.addEventListener("change", () => {
 
 tabs.forEach(tab => {
   tab.addEventListener("click", () => {
+    if (!canNavigateAway()) return;
+
+    if (tab.dataset.tab === "nuevo") {
+      setFormMode("create");
+      moveFormToNuevoView();
+    } else if (isEditing) {
+      exitEditMode();
+    }
+
     showView(tab.dataset.tab);
   });
 });
 
 btnCancel.addEventListener("click", () => {
-  resetForm();
+  if (isEditing) {
+    exitEditMode();
+  } else {
+    resetForm();
+  }
   showView("tickets");
 });
 
@@ -241,5 +327,14 @@ search.value = filters.search;
 filterEstado.value = filters.estado;
 filterPrioridad.value = filters.prioridad;
 
+setFormMode("create");
+
 renderTickets();
 renderDashboard();
+
+// Carga inicial de geolocalizacion y clima
+cargarGeo();
+
+form.addEventListener("input", () => {
+  if (isEditing) isDirty = true;
+});

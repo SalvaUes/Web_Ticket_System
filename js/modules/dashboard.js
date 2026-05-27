@@ -1,208 +1,195 @@
+// ============================================================
+//  dashboard.js  –  Renderizado de metricas, barras de prioridad,
+//  panel de geolocalizacion/clima y conexion con el Web Worker.
+// ============================================================
 
-// Renderizado de metricas, conexion con el Web
-// Worker y composicion del panel de geolocalizacion/clima.
+import { obtenerDatosGeo } from "./apiGeo.js";
 
-import { geolocalizacionAndWeather } from './apiGeo.js';
+// ── Referencias al DOM ──────────────────────────────────────
+const geoPanelEl    = document.getElementById("geo-info");
+const workerPanelEl = document.getElementById("worker-stats");
+const priorityBarsEl = document.getElementById("priority-bars");
+const btnGeo        = document.getElementById("btn-geo");
 
+// ── Instancia unica del Web Worker ──────────────────────────
+let worker = null;
 
-//Seccion que nos permite actualizar los componentes del Dashboard
-export function renderMetrics(stats) {
-    setTextContent('m-total',stats.total);
-    setTextContent('m-abierto',stats.byEstado.abierto);
-    setTextContent('m-progreso',stats.byEstado.en_progreso);
-    setTextContent('m-cerrado',stats.byEstado.cerrado);
+function obtenerWorker() {
+  if (!worker) {
+    worker = new Worker("./js/workers/processor.worker.js");
 
-    //Animacion para cuando cambia el numero
-    animateValue('m-total');
-    animateValue('m-abierto');
-    animateValue('m-progreso');
-    animateValue('m-cerrado');    
+    worker.addEventListener("message", (evento) => {
+      const { tipo, stats, mensaje } = evento.data;
 
-    //Renderiza los sub-paneles del Dashboard.
-    renderPriorityBars(stats.total, stats.byPrioridad);
-    renderWorkerStats(stats);
+      if (tipo === "RESULTADO") {
+        renderWorkerStats(stats);
+        renderPriorityBars(stats.prioridadOrdenada);
+      }
 
+      if (tipo === "ERROR") {
+        workerPanelEl.innerHTML = `<p class="muted">Error en Worker: ${mensaje}</p>`;
+      }
+    });
+
+    worker.addEventListener("error", (e) => {
+      console.error("Worker error:", e);
+      workerPanelEl.innerHTML = `<p class="muted">El Worker encontro un error inesperado.</p>`;
+    });
+  }
+  return worker;
 }
 
-function renderPriorityBars(total, byPrioridad) {
-    const container = document.getElementById('priority-bars');
-    if(!container) return;
 
-    const priorities = [
-        {key: 'critica', label: 'Crítica', cls: 'bar-critica', icon:'🔴' },
-        {key: 'alta', label: 'Alta', cls: 'bar-alta', icon: '🟠'},
-        {key: 'media', label: 'Media', cls: 'bar-media', icon: '🟡'},
-        {key: 'baja', label: 'Baja', cls: 'bar-baja', icon: '🟢'}
+// ── API publica: inicializar dashboard ──────────────────────
 
-    ];
-    if (total == 0) {
-        container.innerHTML = '<p class = "muted">Sin Tickets todavía</p> ';
-        return;
-    }
-
-    container.innerHTML = priorities.map(p=> {
-        const count = byPrioridad[p.key] || 0;
-        const pct = Math.round((count/total)*100);
-        return `
-        <div class ="bar-row" role ="group" aria-label="${p.label}: ${count} tickets, ${pct}%">
-        <span class ="bar-label">${p.icon} ${p.label}</span>
-        <div class ="bar-track" aria-hidden="true">
-         <div class ="bar-fill ${p.cls}" style="width:${pct}%" title="${pct}%"></div>
-        </div>
-        <span class ="bar-count" aria-hidden="true">${count}</span>
-        </div>
-        `;
-
-
-    }).join('');
-
-    //Panel de estadisticas por trabajador
-    function renderWorkerStats(stats) {
-        const container = document.getElementById('worker-stats');
-        if(!container) return;
-
-        const hora = stats.processedAt 
-        ? new Date(stats.processedAt).toLocaleTimeString('es',{
-            hour: '2-digit',minute: '2-digit',second: '2-digit'
-        }) 
-        : '--:--:--';
-        
-        const resolucion = stats.avgResolucionHours !== null
-        ? `${stats.avgResolucionHours} horas`
-        : 'Sin datos';
-
-        //Clase condicional si hay tickets abiertos, se resaltan en rojo
-        const critClass = stats.criticalOpen > 0 ? 'stat-value--danger' : 'stat-value--safe';
-
-        const recenTitle = stats.mostRecent
-        ? truncate(stats.mostRecent.titulo,28)
-        :'Ninguno';
-
-        container.innerHTML = `
-        <div class="stats-grid">
-
-            <div class="stat-item">
-                <span class="stat-label">⚠️ Críticos Sin Cerrar</span>
-                <span class="stat-value ${critClass}">${stats.criticalOpen}</span>
-            </div>
-
-            <div class="stat-item">
-                <span class="stat-label">✅ Tasa de Resolución</span>
-                <span class="stat-value">${stats.resolutionRate ?? 0} % </span>
-            </div> 
-
-            <div class="stat-item" >
-                <span class="stat-label">⏱️ Resolución Promedio</span>
-                <span class="stat-value">${resolucion}</span>
-            </div>
-
-            <div class="stat-item">
-                <span class="stat-label">🎫 Último Ticket</span>
-                <span class="stat-value stat-value--small">${recenTitle}</span>
-            </div> 
-            
-            <div class="stat-item stat-item--full">
-                <span class="stat-label">🤖 Worker procesó a las</span>
-                <span class="stat-value stat-value--time">${hora}</span>
-            </div>
-
-        </div>
-        `;
-
-        
+/**
+ * Llamar desde app.js cada vez que cambie el array de tickets.
+ * Dispara el Worker y, si es la primera vez, la geolocalizacion.
+ * @param {Array} tickets
+ */
+export function actualizarDashboard(tickets) {
+  // Worker: calculos pesados en segundo plano
+  const w = obtenerWorker();
+  w.postMessage({ tipo: "PROCESAR_TICKETS", tickets });
 }
 
-    //Panel de geolocalizacion y clima
-    export async function initGeo() {
-        const container = document.getElementById('geo-info');
-        if(!container) return;
+/**
+ * Solicita (o refresca) los datos de geolocalizacion y clima.
+ * Se llama al cargar la pagina y al pulsar "Actualizar ubicacion".
+ */
+export async function cargarGeo() {
+  geoPanelEl.innerHTML = `<p class="muted">📡 Obteniendo ubicacion...</p>`;
 
-        //Mostrar estado de carga
-        container.innerHTML =  `
-        <div class="geo-loading">
-            <span class="geo-spinner" aria-hidden="true"></span>
-            <p class="muted">Solicitando ubicación...</p>
+  try {
+    const datos = await obtenerDatosGeo();
+    renderGeoPanel(datos);
+  } catch (error) {
+    geoPanelEl.innerHTML = `
+      <p class="muted">⚠️ ${error.message}</p>
+      <small class="muted">Comprueba los permisos de ubicacion del navegador.</small>
+    `;
+  }
+}
+
+
+// ── Renderizadores privados ──────────────────────────────────
+
+/**
+ * Pinta el panel de geolocalizacion con los datos recibidos.
+ * @param {Object} datos  Retorno de obtenerDatosGeo()
+ */
+function renderGeoPanel(datos) {
+  geoPanelEl.innerHTML = `
+    <div class="geo-row">
+      <span class="geo-emoji">${datos.emoji}</span>
+      <div>
+        <strong>${datos.ciudad}, ${datos.pais}</strong>
+        <br />
+        <span class="muted">${datos.descripcion}</span>
+      </div>
+    </div>
+    <div class="geo-row geo-details">
+      <span>🌡️ <strong>${datos.temperatura}°C</strong></span>
+      <span>💧 Humedad: <strong>${datos.humedad}%</strong></span>
+    </div>
+    <div class="geo-coords muted">
+      📍 ${datos.lat}, ${datos.lon}
+    </div>
+  `;
+}
+
+/**
+ * Pinta las estadisticas producidas por el Web Worker.
+ * @param {Object} stats  Retorno de procesarTickets() del Worker
+ */
+function renderWorkerStats(stats) {
+  const { total, conteoEstado, tiempoPromedioCierre, masAntiguo, totalSinCerrar } = stats;
+
+  // Filas de estado con porcentaje
+  const filasEstado = Object.entries(conteoEstado)
+    .map(([estado, cantidad]) => {
+      const pct = total > 0 ? Math.round((cantidad / total) * 100) : 0;
+      return `
+        <div class="worker-row">
+          <span class="worker-label">${capitalizarEstado(estado)}</span>
+          <span class="worker-value">${cantidad} <small class="muted">(${pct}%)</small></span>
+        </div>`;
+    })
+    .join("");
+
+  const filaCierre = tiempoPromedioCierre !== null
+    ? `<div class="worker-row">
+         <span class="worker-label">⏱ Promedio cierre</span>
+         <span class="worker-value">${tiempoPromedioCierre} min</span>
+       </div>`
+    : "";
+
+  const filaAntiguo = masAntiguo
+    ? `<div class="worker-row worker-oldest">
+         <span class="worker-label">🕰 Mas antiguo abierto</span>
+         <span class="worker-value" title="${masAntiguo.titulo}">
+           ${masAntiguo.titulo.length > 28
+             ? masAntiguo.titulo.slice(0, 28) + "…"
+             : masAntiguo.titulo}
+         </span>
+       </div>`
+    : "";
+
+  workerPanelEl.innerHTML = `
+    <div class="worker-row worker-total">
+      <span class="worker-label">Total tickets</span>
+      <span class="worker-value">${total}</span>
+    </div>
+    ${filasEstado}
+    <div class="worker-row">
+      <span class="worker-label">Sin cerrar</span>
+      <span class="worker-value">${totalSinCerrar}</span>
+    </div>
+    ${filaCierre}
+    ${filaAntiguo}
+    <small class="muted worker-note">Calculado por Web Worker ⚙️</small>
+  `;
+}
+
+/**
+ * Pinta las barras de distribucion por prioridad en el dashboard.
+ * @param {Array} prioridadOrdenada  [ { prioridad, cantidad, porcentaje }, … ]
+ */
+function renderPriorityBars(prioridadOrdenada) {
+  if (!priorityBarsEl) return;
+
+  const colores = {
+    critica: "var(--danger)",
+    alta:    "var(--warn)",
+    media:   "var(--primary)",
+    baja:    "var(--success)",
+  };
+
+  priorityBarsEl.innerHTML = prioridadOrdenada
+    .map(({ prioridad, cantidad, porcentaje }) => `
+      <div class="bar-row">
+        <span class="bar-label">${capitalizarEstado(prioridad)}</span>
+        <div class="bar-track">
+          <div class="bar-fill"
+               style="width:${porcentaje}%; background:${colores[prioridad] ?? "var(--accent)"};"
+               role="progressbar"
+               aria-valuenow="${porcentaje}"
+               aria-valuemin="0"
+               aria-valuemax="100">
+          </div>
         </div>
-        `;
+        <span class="bar-count">${cantidad}</span>
+      </div>
+    `)
+    .join("");
+}
 
-        try {
-            const {coords, weather, location} = await getLocationAndWeather();
-            renderGeo(container, coords, weather, location);
+// ── Utilidad ─────────────────────────────────────────────────
+function capitalizarEstado(texto) {
+  return texto.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
-    }catch (error) {
-        container.innerHTML = `
-        <div class="geo-error" role="alert">
-            <span aria-hidden="true">⚠️</span>
-            <p class="muted"> ${error.message}</p>
-            <p class="muted" style="font-size: 0.75rem;margin-top: 0.25rem">
-                Habilita la ubicación en tu navegador y vuelve a intentarlo.
-            </p>
-        </div>
-        `;
-
-        }
-    }  
-    
-    //Pinta el panel de geolocalizacion y clima con las datos obtenidos de las API
-    function renderGeo(container, coords, weather, location) {
-        container.innerHTML = `
-        <div class="geo-grid">
-         <div class="geo-item">
-          <span class="geo-icon" aria-hidden="true">📍</span>
-         <div>
-            <strong>${escapeHtml(location.city)}</strong>
-            <p class="muted geo-sub"> ${location.region ? escapeHtml(location.region) + ',':''} ${escapeHtml(location.country)}</p>">
-        </div>
-        </div>
-        <div class="geo-item">
-            <span class="geo-icon" aria-hidden="true">🌤️</span>
-            <div>
-            <strong>${weather.condition}</strong>
-            <p class="muted geo-sub"> ${weather.timezone}</p>
-            </div>
-            </div>
-
-            <div class="geo-item">
-            <span class="geo-icon" aria-hidden="true">💧</span>
-            <div>
-            <strong>${weather.humidity}%</strong>
-            <p class="muted geo-sub">Humedad ${weather.windSpeed} km/h</p>
-            </div>
-            </div>
-        </div>
-        
-        <p class="geo-accuracy muted">📡 Precisión GPS: ±${coords.accuracy} m</p>
-
-        `;
-    }
-
-    //Las Utilidades Internas  
-    function setTextContent(id, value) {
-        const el = document.getElementById(id);
-        if(el) el.textContent = value;
-    }
-    
-    function animateValue(id) {
-        const el = document.getElementById(id);
-        if(!el) return;
-        el.classList.remove('metric-pop');
-        requestAnimationFrame(() => el.classList.add('metric-pop'));
-    }
-
-    function truncate(str, max) {
-        if(!str) return '';
-        return str.length > max ? str.slice(0, max-3) + '...' : str;
-    }
-
-    function escapeHtml(str = '') {
-        return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-        
-    }
-
-
-
+// ── Boton "Actualizar ubicacion" ─────────────────────────────
+if (btnGeo) {
+  btnGeo.addEventListener("click", cargarGeo);
 }

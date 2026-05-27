@@ -92,9 +92,7 @@
         <div class="panel"><!-- Panel de acciones rapidas -->
           <h3>Acciones rapidas</h3><!-- Titulo del panel -->
           <div class="actions-row"><!-- Fila de botones -->
-            <button id="btn-export" class="btn btn-primary" type="button">Exportar CSV</button><!-- Exportar CSV -->
-            <button id="btn-import" class="btn btn-secondary" type="button">Importar JSON</button><!-- Importar JSON -->
-            <input id="file-import" type="file" accept="application/json" hidden /><!-- Input oculto para JSON -->
+            <button id="btn-export" class="btn btn-primary" type="button">Exportar PDF</button><!-- Exportar PDF -->
             <button id="btn-notify" class="btn btn-secondary" type="button">Notificacion de prueba</button><!-- Notificacion -->
             <button id="btn-seed" class="btn btn-ghost" type="button">Cargar datos demo</button><!-- Datos demo -->
             <button id="btn-clear" class="btn btn-danger" type="button">Borrar todo</button><!-- Limpiar storage -->
@@ -110,7 +108,7 @@
     <!-- ============================ VISTA TICKETS ============================ -->
     <section id="view-tickets" class="view" aria-labelledby="tickets-title"><!-- Vista del listado -->
       <h2 id="tickets-title" class="sr-only">Listado de Tickets</h2><!-- Titulo accesible -->
-      <div class="toolbar"><!-- Barra de herramientas con filtros -->
+      <div class="toolbar" id="tickets-toolbar"><!-- Barra de herramientas con filtros -->
         <input id="search" type="search" placeholder="Buscar por titulo o descripcion..." aria-label="Buscar" /><!-- Busqueda libre -->
         <select id="filter-estado" aria-label="Filtrar por estado"><!-- Filtro por estado -->
           <option value="">Todos los estados</option><!-- Opcion sin filtro -->
@@ -127,6 +125,7 @@
         </select>
         <span id="result-count" class="muted result-count">0 resultados</span><!-- Contador de resultados -->
       </div>
+      <div id="edit-panel" class="edit-panel is-hidden"></div><!-- Panel de edicion en la misma vista -->
       <div id="tickets-list" class="tickets-list" aria-live="polite"></div><!-- Contenedor del listado -->
     </section>
 
@@ -153,7 +152,7 @@
         </label>
 
         <div class="row"><!-- Fila de dos columnas -->
-          <label><!-- Campo estado -->
+          <label id="estado-field" class="is-hidden"><!-- Campo estado -->
             Estado<!-- Etiqueta -->
             <select id="estado"><!-- Select estado -->
               <option value="abierto">Abierto</option><!-- Opcion -->
@@ -190,6 +189,9 @@
     <p class="muted">SoporteHub - Proyecto frontend puro - HTML5, CSS3, JavaScript ES6+</p><!-- Texto del footer -->
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script><!-- libreria para generar PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script><!-- libreria para generar PDF -->
+  <script type="module" src="./js/modules/pdf.js"></script><!-- Registro del boton Exportar PDF -->
   <script type="module" src="./js/app.js"></script><!-- Punto de entrada de la aplicacion como modulo ES6 -->
 </body>
 </html>
