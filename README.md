@@ -1,17 +1,17 @@
 
 # Proyecto Final DTW - Grupo #12
 
-**Tema:** Sistema Web para Gestión de Tickets de Soporte[cite: 2]
+**Tema:** Sistema Web para Gestión de Tickets de Soporte
 
 ## Integrantes del Equipo
-* Claudia Elizabeth Martínez Mendez - Carnet: MM18021[cite: 2]
-* José Daniel Mendez Sanchez - Carnet: MS19059[cite: 2]
-* José Ernesto González García - Carnet: GG18092[cite: 2]
-* José Salvador Vázquez Lara - Carnet: VL23003[cite: 2]
+* Claudia Elizabeth Martínez Mendez - Carnet: MM18021
+* José Daniel Mendez Sanchez - Carnet: MS19059
+* José Ernesto González García - Carnet: GG18092
+* José Salvador Vázquez Lara - Carnet: VL23003
 
 ---
-**Asignatura:** Desarrollo y Técnicas de Aplicaciones Web[cite: 2]
-**Ciclo:** 1 - 2026[cite: 2]
+**Asignatura:** Desarrollo y Técnicas de Aplicaciones Web
+**Ciclo:** 1 - 2026
 
 ---
 ## Metodología de Trabajo y Control de Versiones (Nota para el evaluador)
