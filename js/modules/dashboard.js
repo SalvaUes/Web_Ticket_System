@@ -1,477 +1,409 @@
 // ============================================================
-//  dashboard.js  –  Renderizado de metricas, barras de prioridad,
-//  panel de geolocalizacion/clima y conexion con el Web Worker.
+//  dashboard.js  - Renderizado de metricas del dashboard,
+//  geolocalizacion/clima y procesamiento con Web Worker.
 // ============================================================
 
-import { obtenerDatosGeo } from "./apiGeo.js";
-
-// ── Referencias al DOM ──────────────────────────────────────
-const geoPanelEl    = document.getElementById("geo-info");
-const workerPanelEl = document.getElementById("worker-stats");
-const priorityBarsEl = document.getElementById("priority-bars");
-const btnGeo        = document.getElementById("btn-geo");
-
-// ── Instancia unica del Web Worker ──────────────────────────
-let worker = null;
-
-function obtenerWorker() {
-  if (!worker) {
-    worker = new Worker("./js/workers/processor.worker.js");
-
-    worker.addEventListener("message", (evento) => {
-      const { tipo, stats, mensaje } = evento.data;
-
-      if (tipo === "RESULTADO") {
-        renderWorkerStats(stats);
-        renderPriorityBars(stats.prioridadOrdenada);
-      }
-
-      if (tipo === "ERROR") {
-        workerPanelEl.innerHTML = `<p class="muted">Error en Worker: ${mensaje}</p>`;
-      }
-    });
-
-    worker.addEventListener("error", (e) => {
-      console.error("Worker error:", e);
-      workerPanelEl.innerHTML = `<p class="muted">El Worker encontro un error inesperado.</p>`;
-    });
-  }
-  return worker;
-}
-
-
-// ── API publica: inicializar dashboard ──────────────────────
-
-/**
- * Llamar desde app.js cada vez que cambie el array de tickets.
- * Dispara el Worker y, si es la primera vez, la geolocalizacion.
- * @param {Array} tickets
- */
-export function actualizarDashboard(tickets) {
-  // Worker: calculos pesados en segundo plano
-  const w = obtenerWorker();
-  w.postMessage({ tipo: "PROCESAR_TICKETS", tickets });
-}
-
-/**
- * Solicita (o refresca) los datos de geolocalizacion y clima.
- * Se llama al cargar la pagina y al pulsar "Actualizar ubicacion".
- */
-export async function cargarGeo() {
-  geoPanelEl.innerHTML = `<p class="muted">📡 Obteniendo ubicacion...</p>`;
-
-  try {
-    const datos = await obtenerDatosGeo();
-    renderGeoPanel(datos);
-  } catch (error) {
-    geoPanelEl.innerHTML = `
-      <p class="muted">⚠️ ${error.message}</p>
-      <small class="muted">Comprueba los permisos de ubicacion del navegador.</small>
-    `;
-  }
-}
-
-
-// ── Renderizadores privados ──────────────────────────────────
-
-/**
- * Pinta el panel de geolocalizacion con los datos recibidos.
- * @param {Object} datos  Retorno de obtenerDatosGeo()
- */
-function renderGeoPanel(datos) {
-  geoPanelEl.innerHTML = `
-    <div class="geo-row">
-      <span class="geo-emoji">${datos.emoji}</span>
-      <div>
-        <strong>${datos.ciudad}, ${datos.pais}</strong>
-        <br />
-        <span class="muted">${datos.descripcion}</span>
-      </div>
-    </div>
-    <div class="geo-row geo-details">
-      <span>🌡️ <strong>${datos.temperatura}°C</strong></span>
-      <span>💧 Humedad: <strong>${datos.humedad}%</strong></span>
-    </div>
-    <div class="geo-coords muted">
-      📍 ${datos.lat}, ${datos.lon}
-    </div>
-  `;
-}
-
-/**
- * Pinta las estadisticas producidas por el Web Worker.
- * @param {Object} stats  Retorno de procesarTickets() del Worker
- */
-function renderWorkerStats(stats) {
-  const { total, conteoEstado, tiempoPromedioCierre, masAntiguo, totalSinCerrar } = stats;
-
-  // Filas de estado con porcentaje
-  const filasEstado = Object.entries(conteoEstado)
-    .map(([estado, cantidad]) => {
-      const pct = total > 0 ? Math.round((cantidad / total) * 100) : 0;
-      return `
-        <div class="worker-row">
-          <span class="worker-label">${capitalizarEstado(estado)}</span>
-          <span class="worker-value">${cantidad} <small class="muted">(${pct}%)</small></span>
-        </div>`;
-    })
-    .join("");
-
-  const filaCierre = tiempoPromedioCierre !== null
-    ? `<div class="worker-row">
-         <span class="worker-label">⏱ Promedio cierre</span>
-         <span class="worker-value">${tiempoPromedioCierre} min</span>
-       </div>`
-    : "";
-
-  const filaAntiguo = masAntiguo
-    ? `<div class="worker-row worker-oldest">
-         <span class="worker-label">🕰 Mas antiguo abierto</span>
-         <span class="worker-value" title="${masAntiguo.titulo}">
-           ${masAntiguo.titulo.length > 28
-             ? masAntiguo.titulo.slice(0, 28) + "…"
-             : masAntiguo.titulo}
-         </span>
-       </div>`
-    : "";
-
-  workerPanelEl.innerHTML = `
-    <div class="worker-row worker-total">
-      <span class="worker-label">Total tickets</span>
-      <span class="worker-value">${total}</span>
-    </div>
-    ${filasEstado}
-    <div class="worker-row">
-      <span class="worker-label">Sin cerrar</span>
-      <span class="worker-value">${totalSinCerrar}</span>
-    </div>
-    ${filaCierre}
-    ${filaAntiguo}
-    <small class="muted worker-note">Calculado por Web Worker ⚙️</small>
-  `;
-}
-
-/**
- * Pinta las barras de distribucion por prioridad en el dashboard.
- * @param {Array} prioridadOrdenada  [ { prioridad, cantidad, porcentaje }, … ]
- */
-function renderPriorityBars(prioridadOrdenada) {
-  if (!priorityBarsEl) return;
-
-  const colores = {
-    critica: "var(--danger)",
-    alta:    "var(--warn)",
-    media:   "var(--primary)",
-    baja:    "var(--success)",
-  };
-
-  priorityBarsEl.innerHTML = prioridadOrdenada
-    .map(({ prioridad, cantidad, porcentaje }) => `
-      <div class="bar-row">
-        <span class="bar-label">${capitalizarEstado(prioridad)}</span>
-        <div class="bar-track">
-          <div class="bar-fill"
-               style="width:${porcentaje}%; background:${colores[prioridad] ?? "var(--accent)"};"
-               role="progressbar"
-               aria-valuenow="${porcentaje}"
-               aria-valuemin="0"
-               aria-valuemax="100">
-          </div>
-        </div>
-        <span class="bar-count">${cantidad}</span>
-      </div>
-    `)
-    .join("");
-}
-
-// ── Utilidad ─────────────────────────────────────────────────
-function capitalizarEstado(texto) {
-  return texto.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-// ── Boton "Actualizar ubicacion" ─────────────────────────────
-if (btnGeo) {
-  btnGeo.addEventListener("click", cargarGeo);
-}
-
-// ── CONTRATO CON EL WORKER ───────────────────────────────
 import { obtenerDatosGeo } from "./apiGeo.js";
 import { getTickets, saveTickets } from "./storage.js";
 import { createTicket } from "./crud.js";
 
-
-// ── Referencias al DOM ──────────────────────────────────────
-const geoPanelEl    = document.getElementById("geo-info");
+const geoPanelEl = document.getElementById("geo-info");
 const workerPanelEl = document.getElementById("worker-stats");
 const priorityBarsEl = document.getElementById("priority-bars");
-const btnGeo        = document.getElementById("btn-geo");
-const btnSeed       = document.getElementById("btn-seed");
-const btnNotify      = document.getElementById("btn-notify");
 
+const btnGeo = document.getElementById("btn-geo");
+const btnSeed = document.getElementById("btn-seed");
+const btnNotify = document.getElementById("btn-notify");
 
-// ── Instancia única del Web Worker ──────────────────────────
 let worker = null;
 
 function obtenerWorker() {
   if (!worker) {
     worker = new Worker("./js/workers/processor.worker.js");
+
     worker.addEventListener("message", (evento) => {
-      const { tipo, stats, mensaje } = evento.data;
+      const { tipo, stats, mensaje } = evento.data ?? {};
 
       if (tipo === "RESULTADO") {
-        renderWorkerStats(stats);
-        renderPriorityBars(stats.prioridadOrdenada);
+        renderWorkerStats(stats ?? {});
+        renderPriorityBars(stats?.prioridadOrdenada ?? []);
+        return;
       }
+
       if (tipo === "ERROR") {
-        workerPanelEl.innerHTML = `<p class="muted">Error en Worker: ${mensaje}</p>`;
+        renderStatus(workerPanelEl, `Error en Worker: ${mensaje ?? "desconocido"}`);
       }
     });
-    worker.addEventListener("error", (e) => {
-      console.error("Worker error:", e);
-      workerPanelEl.innerHTML = `<p class="muted">El Worker encontró un error inesperado.</p>`;
+
+    worker.addEventListener("error", (error) => {
+      console.error("Worker error:", error);
+      renderStatus(workerPanelEl, "El Worker encontro un error inesperado.");
     });
   }
+
   return worker;
 }
 
-
-// ── API pública: llamada desde app.js ───────────────────────
-/**
- * Envía los tickets al Worker para calcular estadísticas.
- * app.js llama esto cada vez que cambia el array de tickets.
- * @param {Array} tickets
- */
 export function actualizarDashboard(tickets) {
   const w = obtenerWorker();
-  w.postMessage({ tipo: "PROCESAR_TICKETS", tickets });
+  w.postMessage({ tipo: "PROCESAR_TICKETS", tickets: Array.isArray(tickets) ? tickets : [] });
 }
 
-/*Solicita o refresca los datos de geolocalización y clima.
-Se llama al cargar la página y al pulsar "Actualizar ubicación".*/
 export async function cargarGeo() {
-  geoPanelEl.innerHTML = `<div class="geo-loading">
-    <p class="muted">Obteniendo ubicación...</p></div>`;
-    
+  renderStatus(geoPanelEl, "Obteniendo ubicacion...");
+
   try {
     const datos = await obtenerDatosGeo();
     renderGeoPanel(datos);
   } catch (error) {
-    geoPanelEl.innerHTML = `
-      <p class="muted">⚠️ ${error.message}</p>
-      <small class="muted">Comprueba los permisos de ubicación del navegador.</small>
-    `;
+    renderGeoError(error?.message ?? "No se pudo obtener la ubicacion.");
   }
 }
 
-
-// ── Renderizadores privados ──────────────────────────────────
-
 function renderGeoPanel(datos) {
-  geoPanelEl.innerHTML = `
-    <div class="geo-row">
-      <span class="geo-emoji">${datos.emoji}</span>
-      <div>
-        <strong>${escapeHtml(datos.ciudad)}, ${escapeHtml(datos.pais)}</strong>
-        <br />
-        <span class="muted">${escapeHtml(datos.descripcion)}</span>
-      </div>
-    </div>
-    <div class="geo-row geo-details"> 
-      <span>🌡️ <strong>${datos.temperatura}°C</strong></span>
-      <span>💧 Humedad: <strong>${datos.humedad}%</strong></span>
-    </div>
-    <div class="geo-coords muted">
-      📍 ${datos.lat}, ${datos.lon}
-    </div>
-  `;
+  if (!geoPanelEl) return;
+
+  clearElement(geoPanelEl);
+
+  const topRow = createElement("div", { className: "geo-row" });
+  const emoji = createElement("span", {
+    className: "geo-emoji",
+    text: String(datos?.emoji ?? "🌤️"),
+    attrs: { "aria-hidden": "true" },
+  });
+
+  const locationBlock = createElement("div");
+  const strong = createElement("strong", {
+    text: `${String(datos?.ciudad ?? "Ciudad desconocida")}, ${String(datos?.pais ?? "Pais desconocido")}`,
+  });
+  const br = document.createElement("br");
+  const desc = createElement("span", {
+    className: "muted",
+    text: String(datos?.descripcion ?? "Sin descripcion"),
+  });
+
+  locationBlock.append(strong, br, desc);
+  topRow.append(emoji, locationBlock);
+
+  const detailsRow = createElement("div", { className: "geo-row geo-details" });
+  detailsRow.append(
+    createLabeledValue("🌡️", `${String(datos?.temperatura ?? "-")}°C`),
+    createLabeledValue("💧 Humedad", `${String(datos?.humedad ?? "-")}%`)
+  );
+
+  const coords = createElement("div", {
+    className: "geo-coords muted",
+    text: `📍 ${String(datos?.lat ?? "-")}, ${String(datos?.lon ?? "-")}`,
+  });
+
+  geoPanelEl.append(topRow, detailsRow, coords);
 }
 
-/**Pinta el panel Procesador por Web Worker
- *usa el nombre de los campos exactos que devuelve procesor.worker.js
-* @param {Object} stats — retorno de procesarTickets() del Worker
- */
+function renderGeoError(message) {
+  if (!geoPanelEl) return;
+
+  clearElement(geoPanelEl);
+
+  const warning = createElement("p", {
+    className: "muted",
+    text: `⚠️ ${message}`,
+  });
+  const help = createElement("small", {
+    className: "muted",
+    text: "Comprueba los permisos de ubicacion del navegador.",
+  });
+
+  geoPanelEl.append(warning, help);
+}
+
 function renderWorkerStats(stats) {
-  const { total, conteoEstado, tiempoPromedioCierre, masAntiguo, totalSinCerrar } = stats;
+  if (!workerPanelEl) return;
 
-  const filasEstado = Object.entries(conteoEstado)
-    .map(([estado, cantidad]) => {
-      const pct = total > 0 ? Math.round((cantidad / total) * 100) : 0;
-      return `
-        <div class="worker-row">
-          <span class="worker-label">${capitalizarEstado(estado)}</span>
-          <span class="worker-value">${cantidad} <small class="muted">(${pct}%)</small></span>
-        </div>`;
+  clearElement(workerPanelEl);
+
+  const total = Number(stats?.total ?? 0);
+  const conteoEstado = stats?.conteoEstado ?? {};
+  const tiempoPromedioCierre = stats?.tiempoPromedioCierre ?? null;
+  const masAntiguo = stats?.masAntiguo ?? null;
+  const totalSinCerrar = Number(stats?.totalSinCerrar ?? 0);
+
+  workerPanelEl.append(createWorkerRow("Total tickets", String(total), "worker-total"));
+
+  Object.entries(conteoEstado).forEach(([estado, cantidad]) => {
+    const pct = total > 0 ? Math.round((Number(cantidad) / total) * 100) : 0;
+    const valueWrap = document.createElement("span");
+    valueWrap.className = "worker-value";
+    valueWrap.append(document.createTextNode(`${cantidad} `));
+    valueWrap.append(
+      createElement("small", { className: "muted", text: `(${pct}%)` })
+    );
+
+    const row = createElement("div", { className: "worker-row" });
+    row.append(
+      createElement("span", { className: "worker-label", text: capitalizarEstado(estado) }),
+      valueWrap
+    );
+    workerPanelEl.append(row);
+  });
+
+  workerPanelEl.append(createWorkerRow("Sin cerrar", String(totalSinCerrar)));
+
+  if (tiempoPromedioCierre !== null) {
+    workerPanelEl.append(createWorkerRow("⏱ Promedio cierre", `${tiempoPromedioCierre} min`));
+  }
+
+  if (masAntiguo && typeof masAntiguo.titulo === "string") {
+    const row = createElement("div", { className: "worker-row worker-oldest" });
+    const label = createElement("span", {
+      className: "worker-label",
+      text: "🕰 Mas antiguo abierto",
+    });
+    const value = createElement("span", {
+      className: "worker-value",
+      text: truncate(masAntiguo.titulo, 28),
+      attrs: { title: masAntiguo.titulo },
+    });
+
+    row.append(label, value);
+    workerPanelEl.append(row);
+  }
+
+  workerPanelEl.append(
+    createElement("small", {
+      className: "muted worker-note",
+      text: "Calculado por Web Worker ⚙️",
     })
-    .join("");
-
-  const filaCierre = tiempoPromedioCierre !== null
-    ? `<div class="worker-row">
-          <span class="worker-label">⏱ Promedio cierre</span>
-          <span class="worker-value">${tiempoPromedioCierre} min</span>
-        </div>`
-    : "";
-  const filaAntiguo = masAntiguo 
-    ? `<div class="worker-row worker-oldest">
-          <span class="worker-label">🕰 Más antiguo abierto</span>
-          <span class="worker-value">${truncate(masAntiguo.titulo, 28)}</span>">
-        </div>`
-    : "";
-
-  workerPanelEl.innerHTML = `
-    <div class="worker-row worker-total">
-      <span class="worker-label">Total tickets</span>
-      <span class="worker-value">${total}</span>
-    </div>
-    ${filasEstado}
-    <div class="worker-row">
-      <span class="worker-label">Sin cerrar</span>
-      <span class="worker-value">${totalSinCerrar}</span>
-    </div>
-    ${filaCierre}
-    ${filaAntiguo}
-    <small class="muted worker-note">Calculado por Web Worker ⚙️</small>
-  `;
+  );
 }
-
-/**
- * Pinta las barras de distribución por prioridad.
- * @param {Array} prioridadOrdenada — [{ prioridad, cantidad, porcentaje }, ...]
- */
 
 function renderPriorityBars(prioridadOrdenada) {
   if (!priorityBarsEl) return;
 
   const colores = {
     critica: "var(--danger)",
-    alta:    "var(--warn)",
-    media:   "var(--primary)",
-    baja:    "var(--success)",
+    alta: "var(--warn)",
+    media: "var(--primary)",
+    baja: "var(--success)",
   };
 
-  priorityBarsEl.innerHTML = prioridadOrdenada
-  .map(({ prioridad, cantidad, porcentaje }) => `
-    <div class="bar-row">
-      <span class="bar-label">${capitalizarEstado(prioridad)}</span>
-      <div class="bar-track">
-        <div class="bar-fill"
-              style="width:${porcentaje}%; background:${colores[prioridad] ?? "var(--accent)"};"
-              role="progressbar"
-              aria-valuenow="${porcentaje}"
-              aria-valuemin="0"
-              aria-valuemax="100">
-        </div>
-      </div>
-      <span class="bar-count">${cantidad}</span>
-    </div>
-  `)
-  .join("");
+  clearElement(priorityBarsEl);
+
+  const filas = Array.isArray(prioridadOrdenada) ? prioridadOrdenada : [];
+
+  filas.forEach(({ prioridad, cantidad, porcentaje }) => {
+    const row = createElement("div", { className: "bar-row" });
+    const label = createElement("span", {
+      className: "bar-label",
+      text: capitalizarEstado(String(prioridad ?? "desconocido")),
+    });
+
+    const track = createElement("div", { className: "bar-track" });
+    const fill = createElement("div", {
+      className: "bar-fill",
+      attrs: {
+        role: "progressbar",
+        "aria-valuemin": "0",
+        "aria-valuemax": "100",
+        "aria-valuenow": String(Number(porcentaje ?? 0)),
+        "aria-label": `Prioridad ${String(prioridad ?? "desconocida")}`,
+      },
+    });
+
+    const safePct = Math.max(0, Math.min(100, Number(porcentaje ?? 0)));
+    fill.style.width = `${safePct}%`;
+    fill.style.background = colores[prioridad] ?? "var(--accent)";
+
+    track.append(fill);
+
+    const count = createElement("span", {
+      className: "bar-count",
+      text: String(cantidad ?? 0),
+    });
+
+    row.append(label, track, count);
+    priorityBarsEl.append(row);
+  });
 }
 
-// ── Botón "Cargar datos demo" ────────────────────────────────
+if (btnGeo) {
+  btnGeo.addEventListener("click", cargarGeo);
+}
+
 if (btnSeed) {
   btnSeed.addEventListener("click", () => {
     try {
-      const demos= [
-        {titulo: "Error critico en modulo de pagos", descripcion: "El sistema no procesa pagos con tarjetas de crédito", estado: "abierto", prioridad: "critica", fechaCreacion: "2024-05-01T10:00:00Z"},
-        {titulo: "Fallo al generar reportes", descripcion: "Los reportes mensuales no se generan correctamente", estado: "abierto", prioridad: "alta", fechaCreacion: "2024-05-03T14:30:00Z"},
-        {titulo: "Interfaz lenta en dispositivos móviles", descripcion: "La aplicación se vuelve lenta al acceder desde smartphones", estado: "en_progreso", prioridad: "media", fechaCreacion: "2024-05-05T09:15:00Z"},
-        {titulo: "Consultas del Dashboard muy lentas", descripcion: "Las consultas tardan mas de 5 segundos en responder", estado: "cerrado", prioridad: "baja", fechaCreacion: "2024-05-07T11:45:00Z"},
-        {titulo: "Error al adjuntar archivos", descripcion: "Los usuarios no pueden adjuntar archivos a los tickets", estado: "abierto", prioridad: "alta", fechaCreacion: "2024-05-10T08:20:00Z"},
-        {titulo: "Notificaciones por email no llegan", descripcion: "Los usuarios no reciben emails de notificación", estado: "en_progreso", prioridad: "media", fechaCreacion: "2024-05-12T16:00:00Z"},
-        {titulo: "Problemas de compatibilidad con Safari", descripcion: "La aplicación presenta fallos visuales en Safari", estado: "abierto", prioridad: "baja", fechaCreacion: "2024-05-15T13:10:00Z"},
-        {titulo: "Error 500 en el módulo de autenticación", descripcion: "Los usuarios reciben un error 500 al intentar iniciar sesión", estado: "cerrado", prioridad: "critica", fechaCreacion: "2024-05-18T17:25:00Z"},
-
+      const demos = [
+        {
+          titulo: "Error critico en modulo de pagos",
+          descripcion: "El sistema no procesa pagos con tarjetas de credito",
+          estado: "abierto",
+          prioridad: "critica",
+        },
+        {
+          titulo: "Fallo al generar reportes",
+          descripcion: "Los reportes mensuales no se generan correctamente",
+          estado: "abierto",
+          prioridad: "alta",
+        },
+        {
+          titulo: "Interfaz lenta en dispositivos moviles",
+          descripcion: "La aplicacion se vuelve lenta al acceder desde smartphones",
+          estado: "en_progreso",
+          prioridad: "media",
+        },
+        {
+          titulo: "Consultas del dashboard muy lentas",
+          descripcion: "Las consultas tardan mas de 5 segundos en responder",
+          estado: "cerrado",
+          prioridad: "baja",
+        },
+        {
+          titulo: "Error al adjuntar archivos",
+          descripcion: "Los usuarios no pueden adjuntar archivos a los tickets",
+          estado: "abierto",
+          prioridad: "alta",
+        },
+        {
+          titulo: "Notificaciones por email no llegan",
+          descripcion: "Los usuarios no reciben emails de notificacion",
+          estado: "en_progreso",
+          prioridad: "media",
+        },
+        {
+          titulo: "Problemas de compatibilidad con Safari",
+          descripcion: "La aplicacion presenta fallos visuales en Safari",
+          estado: "abierto",
+          prioridad: "baja",
+        },
+        {
+          titulo: "Error 500 en el modulo de autenticacion",
+          descripcion: "Los usuarios reciben un error 500 al intentar iniciar sesion",
+          estado: "cerrado",
+          prioridad: "critica",
+        },
       ];
 
       const ticketsExistentes = getTickets();
-      const nuevosTickets = demos.map((data, i) => {
+      const nuevosTickets = demos.map((data, index) => {
         const ticket = createTicket(data);
-        ticket.creadoEn = new Date(Date.now() - (i+1)*1.2*24*60*60*1000).toISOString(); // Fechas escalonadas) ;
+        ticket.creadoEn = new Date(Date.now() - (index + 1) * 1.2 * 24 * 60 * 60 * 1000).toISOString();
+
         if (data.estado === "cerrado") {
-          ticket.actualizadoEn = new Date(Date.now() - 6*60*60*1000).toISOString(); // Cierre 20% después de creación
+          ticket.actualizadoEn = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
         }
+
         return ticket;
       });
 
       saveTickets([...ticketsExistentes, ...nuevosTickets]);
-      window.location.reload(); // Recarga para reflejar los cambios
+      window.location.reload();
     } catch (error) {
       console.error("[Dashboard] Error al cargar datos demo:", error);
-          }
-          
-        });
-      }
-
-      // ── Botón "Notificación de prueba" ───────────────────────────
-      if (btnNotify) {
-        btnNotify.addEventListener("click", () => {
-          try {
-            if (!("Notification" in window)) {
-              alert("Tu navegador no soporta notificaciones.");
-              return;
-            }
-
-            const permiso = await Notification.requestPermission();
-            if (permiso === "granted") {
-              const tickets = getTickets();
-              const criticos = tickets.filter(t => t.prioridad === "critica" && t.estado !== "cerrado").length;
-
-              new Notification("SoporteHub 🎫", {
-                body : criticos > 0
-                  ? `⚠️Hay ${criticos} tickets (s) criticos(s) sin cerrar.`
-                  : `✅ Sistema activo · ${tickets.length} ticket(s) en total.`,
-                  tag: "soportehub-notify"
-              });
-            } else {
-              mostrarToastLocal("Permiso de notificaciones denegado.");
-            }
-          } catch (error) {
-            console.error("[Dashboard] Error al enviar notificación:", error);
-          }
-        });
-      }
-      // ── Botón "Actualizar ubicación" ─────────────────────────────
-      if (btnGeo) {
-        btnGeo.addEventListener("click", cargarGeo);
-      }
-
-// ── Utilidades ───────────────────────────────────────────────
-function setTextContent(id, value) {
-  const element = document.getElementById(id);
-  if (element) element.textContent = value;
+    }
+  });
 }
 
-function animateValue(id, value) {
-  const element = document.getElementById(id);
+if (btnNotify) {
+  btnNotify.addEventListener("click", async () => {
+    try {
+      if (!("Notification" in window)) {
+        showLocalToast("Tu navegador no soporta notificaciones.", "warn");
+        return;
+      }
+
+      const permiso = await Notification.requestPermission();
+
+      if (permiso !== "granted") {
+        showLocalToast("Permiso de notificaciones denegado.", "warn");
+        return;
+      }
+
+      const tickets = getTickets();
+      const criticos = tickets.filter((t) => t.prioridad === "critica" && t.estado !== "cerrado").length;
+
+      new Notification("SoporteHub", {
+        body:
+          criticos > 0
+            ? `⚠️ Hay ${criticos} ticket(s) critico(s) sin cerrar.`
+            : `✅ Sistema activo - ${tickets.length} ticket(s) en total.`,
+        tag: "soportehub-notify",
+      });
+    } catch (error) {
+      console.error("[Dashboard] Error al enviar notificacion:", error);
+    }
+  });
+}
+
+function createWorkerRow(label, value, extraClass = "") {
+  const row = createElement("div", {
+    className: `worker-row ${extraClass}`.trim(),
+  });
+  row.append(
+    createElement("span", { className: "worker-label", text: label }),
+    createElement("span", { className: "worker-value", text: value })
+  );
+  return row;
+}
+
+function createLabeledValue(labelText, valueText) {
+  const wrap = createElement("span");
+  wrap.append(document.createTextNode(`${labelText} `));
+  wrap.append(createElement("strong", { text: valueText }));
+  return wrap;
+}
+
+function createElement(tag, options = {}) {
+  const el = document.createElement(tag);
+
+  if (options.className) {
+    el.className = options.className;
+  }
+
+  if (typeof options.text === "string") {
+    el.textContent = options.text;
+  }
+
+  if (options.attrs && typeof options.attrs === "object") {
+    Object.entries(options.attrs).forEach(([name, value]) => {
+      el.setAttribute(name, String(value));
+    });
+  }
+
+  return el;
+}
+
+function renderStatus(container, message) {
+  if (!container) return;
+  clearElement(container);
+  container.append(createElement("p", { className: "muted", text: message }));
+}
+
+function clearElement(element) {
   if (!element) return;
-  element.classList.remove("metric-pop");
-  requestAnimationFrame(() => element.classList.add("metric-pop"));
+  element.replaceChildren();
 }
 
 function truncate(str, max) {
-  if(!str) return "";
-  return str.length > max ? str.slice(0, max) + "…" : str;
-}
-
-function escapeHtml(str = "") {
-  return str
-  .replace(/&/g, "&amp;")
-  .replace(/</g, "&lt;")
-  .replace(/>/g, "&gt;")
-  .replace(/"/g, "&quot;")
+  if (!str) return "";
+  return str.length > max ? `${str.slice(0, max)}...` : str;
 }
 
 function capitalizarEstado(texto) {
-  return texto.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return String(texto)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function mostrarToastLocal(mensaje, tipo = "warning") {
+function showLocalToast(mensaje, tipo = "warn") {
   const container = document.getElementById("toast-container");
   if (!container) return;
-  const toast = document.createElement("div");
-  toast.className = `toast toast-${tipo}`;
-  toast.textContent = mensaje;
-  toast.setAttribute("role", "alert");
-  container.appendChild(toast);
+
+  const toast = createElement("div", {
+    className: `toast toast-${tipo}`,
+    text: mensaje,
+    attrs: { role: "alert" },
+  });
+
+  container.append(toast);
   setTimeout(() => toast.remove(), 3000);
 }

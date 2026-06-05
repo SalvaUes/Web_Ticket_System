@@ -49,20 +49,24 @@ export function createTicket(ticket) {
 
 export function updateTicket(tickets, id, newData) {
   try {
-    return tickets.map(ticket => {
-      if (ticket.id === id) {
-        return {
-          ...ticket,
-          ...newData,
-          actualizadoEn: new Date().toISOString()
-        };
+    return tickets.map((ticket) => {
+      if (ticket.id !== id) return ticket;
+
+      const candidato = {
+        ...ticket,
+        ...newData,
+        actualizadoEn: new Date().toISOString()
+      };
+
+      const validation = validateTicket(candidato);
+      if (!validation.isValid) {
+        throw validation.errors;
       }
 
-      return ticket;
+      return candidato;
     });
   } catch (error) {
-    console.error("Error al actualizar ticket:", error);
-    return tickets;
+    throw error;
   }
 }
 
