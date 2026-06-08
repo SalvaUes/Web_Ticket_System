@@ -14,5 +14,5 @@
 **Ciclo:** 1 - 2026
 
 ---
-## Metodología de Trabajo y Control de Versiones (Nota para el evaluador)
+## Metodología de Trabajo y Control de Versiones
 El proyecto se desarrolló utilizando una estrategia basada en **Pull Requests (PRs)**. Cada integrante subió sus aportes para revisión; los commits aprobados se integraron primero en una rama de pruebas (`qa`) y, finalmente, se realizó el *merge* hacia la rama `main`.
