@@ -13,7 +13,7 @@ const priorityBarsEl = document.getElementById("priority-bars");
 
 const btnGeo = document.getElementById("btn-geo");
 const btnSeed = document.getElementById("btn-seed");
-const btnNotify = document.getElementById("btn-notify");
+const btnTheme = document.getElementById("btn-theme");
 
 let worker = null;
 
@@ -156,7 +156,7 @@ function renderWorkerStats(stats) {
     const row = createElement("div", { className: "worker-row worker-oldest" });
     const label = createElement("span", {
       className: "worker-label",
-      text: "🕰 Mas antiguo abierto",
+      text: "🕰 Mas antiguo abierto ",
     });
     const value = createElement("span", {
       className: "worker-value",
@@ -303,36 +303,36 @@ if (btnSeed) {
   });
 }
 
-if (btnNotify) {
-  btnNotify.addEventListener("click", async () => {
-    try {
-      if (!("Notification" in window)) {
-        showLocalToast("Tu navegador no soporta notificaciones.", "warn");
-        return;
-      }
 
-      const permiso = await Notification.requestPermission();
+// Lógica de Modo Oscuro
 
-      if (permiso !== "granted") {
-        showLocalToast("Permiso de notificaciones denegado.", "warn");
-        return;
-      }
+const THEME_KEY = "soportehub_theme";
 
-      const tickets = getTickets();
-      const criticos = tickets.filter((t) => t.prioridad === "critica" && t.estado !== "cerrado").length;
+function aplicarTema(tema) {
+  if (tema === "dark") {
+    document.body.classList.add("dark");
+    if (btnTheme) btnTheme.textContent = "☀️";
+  } else {
+    document.body.classList.remove("dark");
+    if (btnTheme) btnTheme.textContent = "🌙";
+  }
+}
 
-      new Notification("SoporteHub", {
-        body:
-          criticos > 0
-            ? `⚠️ Hay ${criticos} ticket(s) critico(s) sin cerrar.`
-            : `✅ Sistema activo - ${tickets.length} ticket(s) en total.`,
-        tag: "soportehub-notify",
-      });
-    } catch (error) {
-      console.error("[Dashboard] Error al enviar notificacion:", error);
-    }
+function inicializarTema() {
+  const temaGuardado = localStorage.getItem(THEME_KEY) || "light";
+  aplicarTema(temaGuardado);
+}
+
+if (btnTheme) {
+  inicializarTema();
+  btnTheme.addEventListener("click", () => {
+    const esOscuro = document.body.classList.contains("dark");
+    const nuevoTema = esOscuro ? "light" : "dark";
+    localStorage.setItem(THEME_KEY, nuevoTema);
+    aplicarTema(nuevoTema);
   });
 }
+
 
 function createWorkerRow(label, value, extraClass = "") {
   const row = createElement("div", {

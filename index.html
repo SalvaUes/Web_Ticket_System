@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" /><!-- Viewport responsive -->
 
-  <meta name="description" content="Gestion de tickets de soporte 100% frontend con LocalStorage, Web Workers y API publica" /><!-- Aqui pongo la descripcion para SEO -->
+  <meta name="description"
+    content="Gestion de tickets de soporte 100% frontend con LocalStorage, Web Workers y API publica" />
+  <!-- Aqui pongo la descripcion para SEO -->
   <title>SoporteHub - Gestion de Tickets de Soporte</title><!-- Titulo de la pestana -->
   <link rel="stylesheet" href="./styles/main.css" /><!-- Hoja de estilos global: variables, layout y reset -->
-  <link rel="stylesheet" href="./styles/components.css" /><!-- Hoja de estilos de componentes: tarjetas, botones, formularios -->
+  <link rel="stylesheet" href="./styles/components.css" />
+  <!-- Hoja de estilos de componentes: tarjetas, botones, formularios -->
 </head>
 
 
@@ -26,7 +30,9 @@
 
 
     <nav class="tabs" id="tabs" aria-label="Navegacion principal"><!-- Navegacion por pestanas -->
-      <button class="tab active" data-tab="dashboard" type="button">Dashboard</button><!-- Pestana del panel de metricas -->
+      <button id="btn-theme" class="btn btn-ghost" type="button">🌗</button><!-- Boton de tema -->
+      <button class="tab active" data-tab="dashboard"
+        type="button">Dashboard</button><!-- Pestana del panel de metricas -->
       <button class="tab" data-tab="tickets" type="button">Tickets</button><!-- Pestana del listado -->
       <button class="tab" data-tab="nuevo" type="button">Nuevo Ticket</button><!-- Pestana del formulario -->
     </nav>
@@ -78,7 +84,8 @@
           <div id="geo-info" class="geo-box" aria-live="polite"><!-- Contenedor de datos geo -->
             <p class="muted">Solicitando ubicacion...</p><!-- Estado inicial -->
           </div>
-          <button id="btn-geo" class="btn btn-secondary" type="button">Actualizar ubicacion</button><!-- Boton refrescar geo -->
+          <button id="btn-geo" class="btn btn-secondary" type="button">Actualizar
+            ubicacion</button><!-- Boton refrescar geo -->
         </div>
 
 
@@ -91,11 +98,10 @@
 
         <div class="panel"><!-- Panel de acciones rapidas -->
           <h3>Acciones rapidas</h3><!-- Titulo del panel -->
-          <div class="actions-row"><!-- Fila de botones -->
-            <button id="btn-export" class="btn btn-primary" type="button">Exportar PDF</button><!-- Exportar PDF -->
-            <button id="btn-notify" class="btn btn-secondary" type="button">Notificacion de prueba</button><!-- Notificacion -->
-            <button id="btn-seed" class="btn btn-ghost" type="button">Cargar datos demo</button><!-- Datos demo -->
-            <button id="btn-clear" class="btn btn-danger" type="button">Borrar todo</button><!-- Limpiar storage -->
+          <div class="actions-row">
+            <button id="btn-seed" class="btn btn-secondary" style="width: 100%;"type="button">Cargar datos demo</button>
+            <button id="btn-export" class="btn btn-primary" style="flex: 1;" type="button">Exportar PDF</button>
+            <button id="btn-clear" class="btn btn-danger" style="flex: 1;" type="button">Borrar todo</button>
           </div>
         </div>
 
@@ -109,7 +115,8 @@
     <section id="view-tickets" class="view" aria-labelledby="tickets-title"><!-- Vista del listado -->
       <h2 id="tickets-title" class="sr-only">Listado de Tickets</h2><!-- Titulo accesible -->
       <div class="toolbar" id="tickets-toolbar"><!-- Barra de herramientas con filtros -->
-        <input id="search" type="search" placeholder="Buscar por titulo o descripcion..." aria-label="Buscar" /><!-- Busqueda libre -->
+        <input id="search" type="search" placeholder="Buscar por titulo o descripcion..."
+          aria-label="Buscar" /><!-- Busqueda libre -->
         <select id="filter-estado" aria-label="Filtrar por estado"><!-- Filtro por estado -->
           <option value="">Todos los estados</option><!-- Opcion sin filtro -->
           <option value="abierto">Abierto</option><!-- Opcion abierto -->
@@ -183,15 +190,19 @@
 
   </main>
 
-  <div id="toast-container" class="toast-container" aria-live="assertive"></div><!-- Contenedor de notificaciones toast -->
+  <div id="toast-container" class="toast-container" aria-live="assertive"></div>
+  <!-- Contenedor de notificaciones toast -->
 
   <footer class="footer"><!-- Pie de pagina -->
-    <p class="muted">SoporteHub - Proyecto frontend puro - HTML5, CSS3, JavaScript ES6+</p><!-- Texto del footer -->
+    <p class="muted">SoporteHub</p><!-- Texto del footer -->
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script><!-- libreria para generar PDF -->
-  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script><!-- libreria para generar PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <!-- libreria para generar PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+  <!-- libreria para generar PDF -->
   <script type="module" src="./js/modules/pdf.js"></script><!-- Registro del boton Exportar PDF -->
   <script type="module" src="./js/app.js"></script><!-- Punto de entrada de la aplicacion como modulo ES6 -->
 </body>
+
 </html>

@@ -25,6 +25,46 @@
   --gap: 1rem;                    /* Espaciado base */
 }
 
+/* Tema oscuro */
+body.dark {
+--bg: #ffffff;                  /* Fondo claro */
+--bg-2: #f1f5f9;                /* Fondo secundario claro */
+--surface: #0f172a;             /* Superficie oscura */
+--surface-alt: #1e293b;         /* Superficie alternativa oscura */
+--border: #334155;              /* Bordes oscuros */
+--text: #f1f5f9;                /* Texto claro */
+--text-muted: #94a3b8;          /* Texto secundario claro */
+--primary: #818cf8;             /* Primario ajustado */
+--primary-2: #a78bfa;           /* Primario degradado ajustado */
+--accent: #22d3ee;              /* Acento ajustado */
+--success: #34d399;             /* Éxito ajustado */
+--warn: #fbbf24;                /* Advertencia ajustada */
+--danger: #f87171;              /* Peligro ajustado */
+--shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.3); /* Sombra más pronunciada */
+}
+
+body.dark {
+background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); /* Fondo degradado oscuro */
+color: var(--text);
+}
+
+body.dark .topbar {
+background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); /* Topbar clara */
+color: #0f172a;
+}
+
+body.dark .tab {
+color: rgba(15, 23, 42, 0.7);
+}
+
+body.dark .tab:hover {
+color: #0f172a;
+}
+
+body.dark .tabs {
+background: rgba(0,0,0,0.08);
+}
+
 
 
 /* Reset minimo: cero margenes, padding y modelo de caja consistente */
